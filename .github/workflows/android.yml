@@ -23,8 +23,6 @@ jobs:
 
       - name: Build Android APK
         env:
-          FLET_NON_INTERACTIVE: "true"
+          FLET_CI: "true"
         run: |
           flet build apk . --product "Trainer OT EB" --org org.trainer
-
-
