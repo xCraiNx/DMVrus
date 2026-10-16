@@ -1,8 +1,0 @@
-{
-    "android": {
-        "permissions": [
-            "android.permission.VIBRATE"
-        ]
-    },
-    "assets_dir": "assets"
-}
