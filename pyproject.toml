@@ -4,7 +4,3 @@ version = "1.0.0"
 dependencies = [
     "flet==1.0.4"
 ]
-
-[tool.flet]
-product = "Trainer OT EB"
-org = "org.trainer"
