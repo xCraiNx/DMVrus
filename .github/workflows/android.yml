@@ -23,4 +23,5 @@ jobs:
 
       - name: Build Android APK
         run: |
-          flet build apk --project "Trainer OT EB" --org org.trainer
+          flet build apk --project "Trainer OT EB" --org org.trainer --assets assets
+
