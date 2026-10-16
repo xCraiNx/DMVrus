@@ -84,7 +84,7 @@ def show_settings_dialog():
 def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
     bc = get_cur_color() if is_sys else get_sec_color(sec_id); tl = title.lower()
     ct = "ПРОТИВОПОЖАРНЫЙ РЕЖИМ" if "противопожарного" in tl else ("ПЕРВАЯ ПОМОЩЬ" if "первой" in tl else ("ОХРАНА ТРУДА В ЭУ" if "охране труда" in tl else ("ПТЭ ЭЛЕКТРОУСТАНОВОК" if "технической эксплуатации" in tl else ("ПРАВИЛА УСТРОЙСТВА ЭУ" if "устройства электроустановок" in tl else ("ПРАВИЛА ПЕРЕКЛЮЧЕНИЙ" if "переключений" in tl else ("РАБОТА С ПЕРСОНАЛОМ" if "персоналом" in tl else title.upper()))))))
-    return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(ct, size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, expand=True), ft.Container(content=ft.Text(str(count), size=12, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.Colors.WHITE, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(15))), margin=ft.margin.only(bottom=2))
+    return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(ct, size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK, expand=True), ft.Container(content=ft.Text(str(count), size=12, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.Colors.BLACK, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(15))), margin=ft.margin.only(bottom=2))
 def filter_search(e):
     v = str(e.control.value).strip().lower()
     if not v: show_menu(); return
@@ -121,16 +121,16 @@ def load_question():
     result_text.value = ""; confirm_btn.visible = False; progress_bar.value = state["index"] / len(state["current_df"]); progress_bar.color = get_sec_color(q.get("раздел", "1"))
     question_text.value = f"{q.get('текст вопроса', '')}"
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
-    fav_btn.icon, fav_btn.icon_color = (ft.icons.STAR, ft.Colors.AMBER_500) if is_f else (ft.icons.STAR_BORDER, ft.Colors.WHITE if settings.get("dark_theme") else ft.Colors.BLACK)
+    fav_btn.icon, fav_btn.icon_color = (ft.icons.STAR, ft.Colors.AMBER_500) if is_f else (ft.icons.STAR_BORDER, ft.Colors.BLACK if settings.get("dark_theme") else ft.Colors.BLACK)
     is_n = any(x.get("текст вопроса") == q.get("текст вопроса") for x in get_all_notebook())
-    notebook_btn.icon, notebook_btn.icon_color = (ft.icons.BOOKMARK, ft.Colors.BLUE_500) if is_n else (ft.icons.BOOKMARK_BORDER, ft.Colors.WHITE if settings.get("dark_theme") else ft.Colors.BLACK)
+    notebook_btn.icon, notebook_btn.icon_color = (ft.icons.BOOKMARK, ft.Colors.BLUE_500) if is_n else (ft.icons.BOOKMARK_BORDER, ft.Colors.BLACK if settings.get("dark_theme") else ft.Colors.BLACK)
     ro = [x.strip() for x in q.get("варианты", "").split("|") if x.strip()]; ct = q.get("ответ", "").strip()
     state["is_multiple_choice"] = ct.startswith("[") and ct.endswith("]")
     cl = [x.strip() for x in ct[1:-1].split(",") if x.strip()] if state["is_multiple_choice"] else [ct]
     state["original_options"] = [{"text": o, "is_correct": o in cl} for o in ro]; state["shuffled_options"] = list(state["original_options"])
     if settings.get("shuffle_options"): random.shuffle(state["shuffled_options"])
     options_column.controls.clear()
-    for i, opt in enumerate(state["shuffled_options"]): options_column.controls.append(ft.Container(content=ft.Text(opt["text"], size=15, color=ft.Colors.BLACK if not settings.get("dark_theme") else ft.Colors.WHITE), padding=ft.padding.all(14), border=ft.border.all(1, ft.Colors.GREY_400 if not settings.get("dark_theme") else ft.Colors.GREY_700), border_radius=10, bgcolor=ft.Colors.GREY_100 if not settings.get("dark_theme") else ft.Colors.GREY_900, on_click=lambda e, idx=i: select_option(idx)))
+    for i, opt in enumerate(state["shuffled_options"]): options_column.controls.append(ft.Container(content=ft.Text(opt["text"], size=15, color=ft.Colors.BLACK if not settings.get("dark_theme") else ft.Colors.BLACK), padding=ft.padding.all(14), border=ft.border.all(1, ft.Colors.GREY_400 if not settings.get("dark_theme") else ft.Colors.GREY_700), border_radius=10, bgcolor=ft.Colors.GREY_100 if not settings.get("dark_theme") else ft.Colors.GREY_900, on_click=lambda e, idx=i: select_option(idx)))
     state["active_page"].update()
 def select_option(idx):
     if state["answered_current"]: return
@@ -171,7 +171,7 @@ def setup_test_screen():
 def finish_test():
     page = state["active_page"]; page.controls.clear(); state["app_running"] = False; total = len(state["current_df"]); m, s = divmod(int(time.time() - state["start_time"]), 60)
     h = load_json(st_path, []); h.append({"date": time.strftime("%d.%m.%Y %H:%M"), "section": state["current_section_name"], "score": state["score"], "total": total}); save_json(st_path, h); clear_saved_progress()
-    page.add(ft.Column([ft.Text("🎉 Тестирование завершено!", size=22, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(f"Результат: {state['score']} из {total} ({ (state['score']/total*100) if total else 0 :.1f}%)", size=18, text_align=ft.TextAlign.CENTER), ft.Text(f"⏱️ Затраченное время: {m:02d}:{s:02d}", size=15, text_align=ft.TextAlign.CENTER), ft.Container(height=10), ft.FilledButton("📁 В главное меню", on_click=lambda e: show_menu(), style=square_style)], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15))
+    page.add(ft.Column([ft.Text("🎉 Тестирование завершено!", size=22, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(f"Результат: {state['score']} из {total} ({ (state['score']/total*100) if total else 0 :.1f}%)", size=18, text_align=ft.TextAlign.CENTER), ft.Text(f"⏱️ Затраченное время: {m:02d}:{s:02d}", size=15, text_align=ft.TextAlign.CENTER), ft.Container(height=10), ft.FilledButton("📁 В главное меню", on_click=lambda e: show_menu(), style=square_style)], ft.CrossAxisAlignment.CENTER, spacing=15))
 def main(page: ft.Page):
     state["active_page"] = page; page.safe_area = False; main_layout = ft.Column(horizontal_alignment=ft.CrossAxisAlignment.STRETCH, spacing=10)
     page.add = lambda *controls: [main_layout.controls.extend(controls), page.update()]; page.controls.clear(); page.controls.append(ft.SafeArea(content=main_layout)); page.update()
