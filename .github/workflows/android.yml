@@ -4,44 +4,43 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: 'temurin'
+          java-version: '21'
 
-      - name: Set up Flutter SDK
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          flutter-version: '3.24.5'
-
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Flet Dependency
+      - name: Install Flet
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install flet==1.0.4
 
-      - name: Export Flet to Native Flutter Project
-        run: |
-          flet pack . --product "Trainer OT EB" --org org.trainer
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.22.2'
 
-      - name: Compile Native Android APK
+      - name: Disable Flutter Analytics & Build APK
+        env:
+          FLET_CI: "true"
+          CI: "true"
         run: |
-          cd build/flutter
-          flutter build apk --release --no-pub
+          flutter config --no-analytics
+          flet build apk --project "Trainer OT EB" --org org.trainer
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: flet-trainer-app
-          path: build/flutter/build/app/outputs/flutter-apk/app-release.apk
+          path: build/apk/*.apk
