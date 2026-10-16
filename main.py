@@ -59,8 +59,8 @@ def delete_current_from_notebook(e): q = state["current_df"][state["index"]]; sa
 question_text, result_text, timer_text = ft.Text(size=18, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(size=16, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER), ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
 progress_bar, square_style = ft.ProgressBar(value=0.0, height=8, color=ft.Colors.ORANGE_700), ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
 back_to_menu_btn, confirm_btn = ft.FilledButton("📁 В меню", style=square_style), ft.FilledButton("✅ Подтвердить ответ", visible=False, style=square_style)
-fav_btn, notebook_btn, del_nb_btn = ft.IconButton(icon=ft.icons.STAR_BORDER, icon_size=26), ft.IconButton(icon=ft.icons.BOOKMARK_BORDER, icon_size=26), ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_size=26, icon_color=ft.Colors.RED_400)
-options_column, search_input, menu_items_column = ft.Column(spacing=10, horizontal_alignment=ft.CrossAxisAlignment.STRETCH), ft.TextField(label="Поиск...", prefix_icon=ft.icons.SEARCH, border_radius=8, expand=True), ft.Column(spacing=8, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
+fav_btn, notebook_btn, del_nb_btn = ft.IconButton(icon=ft.Icons.star_border, icon_size=26), ft.IconButton(icon=ft.Icons.bookmark_border, icon_size=26), ft.IconButton(icon=ft.Icons.delete_outline, icon_size=26, icon_color=ft.Colors.RED_400)
+options_column, search_input, menu_items_column = ft.Column(spacing=10, horizontal_alignment=ft.CrossAxisAlignment.STRETCH), ft.TextField(label="Поиск...", prefix_icon=ft.Icons.search, border_radius=8, expand=True), ft.Column(spacing=8, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
 def show_stats_dialog():
     page = state["active_page"]; h = load_json(st_path, [])
     if not h: page.open(ft.AlertDialog(title=ft.Text("📊 Статистика"), content=ft.Text("Нет завершенных тестов."))); return
@@ -92,7 +92,7 @@ def filter_search(e):
     menu_items_column.controls.clear(); menu_items_column.controls.append(create_menu_card("🔍 Найдено совпадений", len(state["search_results"]), lambda e: start_test("SEARCH_RESULT"), True)); state["active_page"].update()
 def show_menu():
     page = state["active_page"]; page.controls.clear(); page.scroll = ft.ScrollMode.AUTO; state.update({"is_favorite_mode": False, "is_review_mode": False, "is_notebook_mode": False, "is_search_test_mode": False, "current_section_name": "", "current_df": []})
-    tc = get_cur_color(); header = ft.Row([ft.Text("Тренажёр ОТ и ЭБ", size=24, weight=ft.FontWeight.BOLD, expand=True), ft.Row([ft.IconButton(icon=ft.icons.BAR_CHART, icon_color=tc, on_click=lambda e: show_stats_dialog()), ft.IconButton(icon=ft.icons.SETTINGS, icon_color=tc, on_click=lambda e: show_settings_dialog()), ft.IconButton(icon=ft.icons.REFRESH, icon_color=tc, on_click=lambda e: [clear_saved_progress(), show_menu()])], spacing=0)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+    tc = get_cur_color(); header = ft.Row([ft.Text("Тренажёр ОТ и ЭБ", size=24, weight=ft.FontWeight.BOLD, expand=True), ft.Row([ft.IconButton(icon=ft.Icons.bar_chart, icon_color=tc, on_click=lambda e: show_stats_dialog()), ft.IconButton(icon=ft.Icons.settings, icon_color=tc, on_click=lambda e: show_settings_dialog()), ft.IconButton(icon=ft.Icons.refresh, icon_color=tc, on_click=lambda e: [clear_saved_progress(), show_menu()])], spacing=0)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
     sections = {}
     for q in questions_data:
         raw_sec = str(q.get("раздел", "1")).strip(); sec_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
@@ -121,9 +121,9 @@ def load_question():
     result_text.value = ""; confirm_btn.visible = False; progress_bar.value = state["index"] / len(state["current_df"]); progress_bar.color = get_sec_color(q.get("раздел", "1"))
     question_text.value = f"{q.get('текст вопроса', '')}"
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
-    fav_btn.icon, fav_btn.icon_color = (ft.icons.STAR, ft.Colors.AMBER_500) if is_f else (ft.icons.STAR_BORDER, ft.Colors.BLACK if settings.get("dark_theme") else ft.Colors.BLACK)
+    fav_btn.icon, fav_btn.icon_color = (ft.Icons.star, ft.Colors.AMBER_500) if is_f else (ft.Icons.star_border, ft.Colors.BLACK if settings.get("dark_theme") else ft.Colors.BLACK)
     is_n = any(x.get("текст вопроса") == q.get("текст вопроса") for x in get_all_notebook())
-    notebook_btn.icon, notebook_btn.icon_color = (ft.icons.BOOKMARK, ft.Colors.BLUE_500) if is_n else (ft.icons.BOOKMARK_BORDER, ft.Colors.BLACK if settings.get("dark_theme") else ft.Colors.BLACK)
+    notebook_btn.icon, notebook_btn.icon_color = (ft.Icons.bookmark, ft.Colors.BLUE_500) if is_n else (ft.Icons.bookmark_border, ft.Colors.BLACK if settings.get("dark_theme") else ft.Colors.BLACK)
     ro = [x.strip() for x in q.get("варианты", "").split("|") if x.strip()]; ct = q.get("ответ", "").strip()
     state["is_multiple_choice"] = ct.startswith("[") and ct.endswith("]")
     cl = [x.strip() for x in ct[1:-1].split(",") if x.strip()] if state["is_multiple_choice"] else [ct]
