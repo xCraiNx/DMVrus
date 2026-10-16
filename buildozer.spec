@@ -20,7 +20,7 @@ android.sdk_build_tools = 34.0.0
 android.private_storage = True
 
 # Иконка приложения (раскомментируй, если добавишь icon.png в корень)
-# icon.filename = %(source.dir)s/icon.png
+icon.filename = %(source.dir)s/icon.png
 
 [buildozer]
 log_level = 2
