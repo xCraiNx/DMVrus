@@ -15,6 +15,12 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.24.5'
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -25,6 +31,17 @@ jobs:
           pip install --upgrade pip
           pip install flet
 
-      - name: Build Android APK
+      - name: Initialize Flutter Project
         run: |
-          flet build apk . --product "Trainer OT EB" --org org.trainer --accept-licenses
+          flet pack . --product "Trainer OT EB" --org org.trainer
+
+      - name: Build Android APK via Flutter
+        run: |
+          cd build/flutter
+          flutter build apk --release --no-pub
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flet-trainer-app
+          path: build/flutter/build/app/outputs/flutter-apk/*.apk
