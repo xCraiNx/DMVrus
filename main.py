@@ -8,8 +8,8 @@ data_dir = os.path.join(tempfile.gettempdir(), ".flet_trainer_cache_v2")
 os.makedirs(data_dir, exist_ok=True)
 fav_path, nb_path, wr_path = os.path.join(data_dir, "fv.json"), os.path.join(data_dir, "nb.json"), os.path.join(data_dir, "wr.json")
 st_path, pr_path, se_path = os.path.join(data_dir, "st.json"), os.path.join(data_dir, "pr.json"), os.path.join(data_dir, "se.json")
-SECTION_COLORS = {"1": ft.colors.ORANGE_800, "2": ft.colors.BLUE_800, "3": ft.colors.GREEN_800, "4": ft.colors.TEAL_800, "5": ft.colors.RED_800, "6": ft.colors.DEEP_ORANGE_800, "7": ft.colors.INDIGO_800, "8": ft.colors.PURPLE_800, "9": ft.colors.CYAN_800}
-THEME_PALETTES = {"classic": {"primary": ft.colors.ORANGE_700, "bg_btn": ft.colors.ORANGE_500}, "premium": {"primary": ft.colors.INDIGO_700, "bg_btn": ft.colors.INDIGO_500}, "eco": {"primary": ft.colors.GREEN_700, "bg_btn": ft.colors.GREEN_500}, "monochrome": {"primary": ft.colors.BLUE_GREY_700, "bg_btn": ft.colors.BLUE_GREY_500}}
+SECTION_COLORS = {"1": ft.Colors.ORANGE_800, "2": ft.Colors.BLUE_800, "3": ft.Colors.GREEN_800, "4": ft.Colors.TEAL_800, "5": ft.Colors.RED_800, "6": ft.Colors.DEEP_ORANGE_800, "7": ft.Colors.INDIGO_800, "8": ft.Colors.PURPLE_800, "9": ft.Colors.CYAN_800}
+THEME_PALETTES = {"classic": {"primary": ft.Colors.ORANGE_700, "bg_btn": ft.Colors.ORANGE_500}, "premium": {"primary": ft.Colors.INDIGO_700, "bg_btn": ft.Colors.INDIGO_500}, "eco": {"primary": ft.Colors.GREEN_700, "bg_btn": ft.Colors.GREEN_500}, "monochrome": {"primary": ft.Colors.BLUE_GREY_700, "bg_btn": ft.Colors.BLUE_GREY_500}}
 def load_json(p, d):
     if os.path.exists(p):
         try:
@@ -57,9 +57,9 @@ def toggle_notebook(e):
     save_json(nb_path, n); load_question()
 def delete_current_from_notebook(e): q = state["current_df"][state["index"]]; save_json(nb_path, [x for x in get_all_notebook() if x.get("текст вопроса", "").strip() != q.get("текст вопроса", "").strip()]); state["current_df"].pop(state["index"]); load_question()
 question_text, result_text, timer_text = ft.Text(size=18, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(size=16, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER), ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
-progress_bar, square_style = ft.ProgressBar(value=0.0, height=8, color=ft.colors.ORANGE_700), ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
+progress_bar, square_style = ft.ProgressBar(value=0.0, height=8, color=ft.Colors.ORANGE_700), ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
 back_to_menu_btn, confirm_btn = ft.FilledButton("📁 В меню", style=square_style), ft.FilledButton("✅ Подтвердить ответ", visible=False, style=square_style)
-fav_btn, notebook_btn, del_nb_btn = ft.IconButton(icon=ft.icons.STAR_BORDER, icon_size=26), ft.IconButton(icon=ft.icons.BOOKMARK_BORDER, icon_size=26), ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_size=26, icon_color=ft.colors.RED_400)
+fav_btn, notebook_btn, del_nb_btn = ft.IconButton(icon=ft.icons.STAR_BORDER, icon_size=26), ft.IconButton(icon=ft.icons.BOOKMARK_BORDER, icon_size=26), ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_size=26, icon_color=ft.Colors.RED_400)
 options_column, search_input, menu_items_column = ft.Column(spacing=10, horizontal_alignment=ft.CrossAxisAlignment.STRETCH), ft.TextField(label="Поиск...", prefix_icon=ft.icons.SEARCH, border_radius=8, expand=True), ft.Column(spacing=8, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
 def show_stats_dialog():
     page = state["active_page"]; h = load_json(st_path, [])
@@ -84,7 +84,7 @@ def show_settings_dialog():
 def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
     bc = get_cur_color() if is_sys else get_sec_color(sec_id); tl = title.lower()
     ct = "ПРОТИВОПОЖАРНЫЙ РЕЖИМ" if "противопожарного" in tl else ("ПЕРВАЯ ПОМОЩЬ" if "первой" in tl else ("ОХРАНА ТРУДА В ЭУ" if "охране труда" in tl else ("ПТЭ ЭЛЕКТРОУСТАНОВОК" if "технической эксплуатации" in tl else ("ПРАВИЛА УСТРОЙСТВА ЭУ" if "устройства электроустановок" in tl else ("ПРАВИЛА ПЕРЕКЛЮЧЕНИЙ" if "переключений" in tl else ("РАБОТА С ПЕРСОНАЛОМ" if "персоналом" in tl else title.upper()))))))
-    return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(ct, size=13, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, expand=True), ft.Container(content=ft.Text(str(count), size=12, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.colors.WHITE, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(15))), margin=ft.margin.only(bottom=2))
+    return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(ct, size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, expand=True), ft.Container(content=ft.Text(str(count), size=12, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.Colors.WHITE, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(15))), margin=ft.margin.only(bottom=2))
 def filter_search(e):
     v = str(e.control.value).strip().lower()
     if not v: show_menu(); return
@@ -103,7 +103,7 @@ def show_menu():
     menu_items_column.controls.extend([r1, r2, ft.Container(height=10)])
     for s in sorted(sections.keys(), key=lambda x: int(x) if x.isdigit() else 999):
         ql = sections[s]; menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", f"Раздел {s}") if ql else f"Раздел {s}", len(ql), lambda e, sec=s: start_test(sec), sec_id=s))
-    search_input.on_change = filter_search; page.add(header, ft.Row([search_input]), ft.Divider(height=5, color=ft.colors.TRANSPARENT), menu_items_column); page.update()
+    search_input.on_change = filter_search; page.add(header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column); page.update()
 def start_test(sec_name):
     state.update({"index": 0, "score": 0, "start_time": time.time(), "is_favorite_mode": sec_name=="FAVORITES", "is_review_mode": sec_name=="REVIEW", "is_notebook_mode": sec_name=="NOTEBOOK", "is_search_test_mode": sec_name=="SEARCH_RESULT", "current_section_name": sec_name, "app_running": True})
     if sec_name == "REVIEW": state["current_df"] = get_all_wrong()
@@ -121,16 +121,16 @@ def load_question():
     result_text.value = ""; confirm_btn.visible = False; progress_bar.value = state["index"] / len(state["current_df"]); progress_bar.color = get_sec_color(q.get("раздел", "1"))
     question_text.value = f"{q.get('текст вопроса', '')}"
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
-    fav_btn.icon, fav_btn.icon_color = (ft.icons.STAR, ft.colors.AMBER_500) if is_f else (ft.icons.STAR_BORDER, ft.colors.WHITE if settings.get("dark_theme") else ft.colors.BLACK)
+    fav_btn.icon, fav_btn.icon_color = (ft.icons.STAR, ft.Colors.AMBER_500) if is_f else (ft.icons.STAR_BORDER, ft.Colors.WHITE if settings.get("dark_theme") else ft.Colors.BLACK)
     is_n = any(x.get("текст вопроса") == q.get("текст вопроса") for x in get_all_notebook())
-    notebook_btn.icon, notebook_btn.icon_color = (ft.icons.BOOKMARK, ft.colors.BLUE_500) if is_n else (ft.icons.BOOKMARK_BORDER, ft.colors.WHITE if settings.get("dark_theme") else ft.colors.BLACK)
+    notebook_btn.icon, notebook_btn.icon_color = (ft.icons.BOOKMARK, ft.Colors.BLUE_500) if is_n else (ft.icons.BOOKMARK_BORDER, ft.Colors.WHITE if settings.get("dark_theme") else ft.Colors.BLACK)
     ro = [x.strip() for x in q.get("варианты", "").split("|") if x.strip()]; ct = q.get("ответ", "").strip()
     state["is_multiple_choice"] = ct.startswith("[") and ct.endswith("]")
     cl = [x.strip() for x in ct[1:-1].split(",") if x.strip()] if state["is_multiple_choice"] else [ct]
     state["original_options"] = [{"text": o, "is_correct": o in cl} for o in ro]; state["shuffled_options"] = list(state["original_options"])
     if settings.get("shuffle_options"): random.shuffle(state["shuffled_options"])
     options_column.controls.clear()
-    for i, opt in enumerate(state["shuffled_options"]): options_column.controls.append(ft.Container(content=ft.Text(opt["text"], size=15, color=ft.colors.BLACK if not settings.get("dark_theme") else ft.colors.WHITE), padding=ft.padding.all(14), border=ft.border.all(1, ft.colors.GREY_400 if not settings.get("dark_theme") else ft.colors.GREY_700), border_radius=10, bgcolor=ft.colors.GREY_100 if not settings.get("dark_theme") else ft.colors.GREY_900, on_click=lambda e, idx=i: select_option(idx)))
+    for i, opt in enumerate(state["shuffled_options"]): options_column.controls.append(ft.Container(content=ft.Text(opt["text"], size=15, color=ft.Colors.BLACK if not settings.get("dark_theme") else ft.Colors.WHITE), padding=ft.padding.all(14), border=ft.border.all(1, ft.Colors.GREY_400 if not settings.get("dark_theme") else ft.Colors.GREY_700), border_radius=10, bgcolor=ft.Colors.GREY_100 if not settings.get("dark_theme") else ft.Colors.GREY_900, on_click=lambda e, idx=i: select_option(idx)))
     state["active_page"].update()
 def select_option(idx):
     if state["answered_current"]: return
@@ -138,7 +138,7 @@ def select_option(idx):
         if idx in state["selected_options_indices"]: state["selected_options_indices"].remove(idx)
         else: state["selected_options_indices"].append(idx)
         confirm_btn.visible = len(state["selected_options_indices"]) > 0
-        for i, c in enumerate(options_column.controls): c.bgcolor = (ft.colors.ORANGE_100 if i in state["selected_options_indices"] else ft.colors.GREY_100) if not settings.get("dark_theme") else (ft.colors.ORANGE_900 if i in state["selected_options_indices"] else ft.colors.GREY_900)
+        for i, c in enumerate(options_column.controls): c.bgcolor = (ft.Colors.ORANGE_100 if i in state["selected_options_indices"] else ft.Colors.GREY_100) if not settings.get("dark_theme") else (ft.Colors.ORANGE_900 if i in state["selected_options_indices"] else ft.Colors.GREY_900)
         state["active_page"].update()
     else: state["selected_options_indices"] = [idx]; check_answer()
 def check_answer():
@@ -153,10 +153,10 @@ def check_answer():
     trigger_vibration(success=is_all)
     for i, c in enumerate(options_column.controls):
         o = state["shuffled_options"][i]; is_s = i in state["selected_options_indices"]
-        if o["is_correct"]: c.bgcolor = ft.colors.GREEN_100 if not settings.get("dark_theme") else ft.colors.GREEN_900
-        elif is_s: c.bgcolor = ft.colors.RED_100 if not settings.get("dark_theme") else ft.colors.RED_900
-    if is_all: state["score"] += 1; remove_wrong_q(q.get("текст вопроса", "")); result_text.value = "🎉 Правильно!"; result_text.color = ft.colors.GREEN_600
-    else: add_wrong_q(q); result_text.value = f"💡 Подсказка:\n• {q.get('подсказка', 'Разбор отсутствует.')}"; result_text.color = ft.colors.RED_600
+        if o["is_correct"]: c.bgcolor = ft.Colors.GREEN_100 if not settings.get("dark_theme") else ft.Colors.GREEN_900
+        elif is_s: c.bgcolor = ft.Colors.RED_100 if not settings.get("dark_theme") else ft.Colors.RED_900
+    if is_all: state["score"] += 1; remove_wrong_q(q.get("текст вопроса", "")); result_text.value = "🎉 Правильно!"; result_text.color = ft.Colors.GREEN_600
+    else: add_wrong_q(q); result_text.value = f"💡 Подсказка:\n• {q.get('подсказка', 'Разбор отсутствует.')}"; result_text.color = ft.Colors.RED_600
     if settings.get("exam_mode", False): state["index"] += 1; load_question()
     else:
         state["can_tap_to_next"] = True; state["active_page"].update()
@@ -191,7 +191,7 @@ def main(page: ft.Page):
         fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click, confirm_btn.on_click = toggle_favorite, toggle_notebook, delete_current_from_notebook, check_answer
         show_menu(); threading.Thread(target=async_parser, daemon=True).start()
     except Exception as e:
-        import traceback; page.controls.clear(); page.controls.append(ft.SafeArea(content=ft.Column([ft.Text("🚨 СБОЙ:", size=20, weight=ft.FontWeight.BOLD), ft.Container(content=ft.Text(traceback.format_exc(), size=12), bgcolor=ft.colors.GREY_900, padding=10, expand=True)], scroll=ft.ScrollMode.AUTO))); page.update(); return
+        import traceback; page.controls.clear(); page.controls.append(ft.SafeArea(content=ft.Column([ft.Text("🚨 СБОЙ:", size=20, weight=ft.FontWeight.BOLD), ft.Container(content=ft.Text(traceback.format_exc(), size=12), bgcolor=ft.Colors.GREY_900, padding=10, expand=True)], scroll=ft.ScrollMode.AUTO))); page.update(); return
     def timer_loop():
         while state["app_running"]:
             time.sleep(1)
