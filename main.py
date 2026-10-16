@@ -19,7 +19,7 @@ def save_json(p, data):
     except: pass
 settings = load_json(se_path, {"dark_theme": False, "exam_mode": False, "show_hints": True, "shuffle_options": True, "shuffle_questions": True, "sounds": True, "adaptive_colors": True, "theme_style": "classic"})
 def get_cur_color(): return THEME_PALETTES.get(settings.get("theme_style", "classic"), THEME_PALETTES["classic"])["primary"]
-def get_sec_color(s_num): return SECTION_COLORS.get(str(s_num), get_cur_color()) if settings.get("adaptive_colors", True) else THEME_PALETTES.get(settings.get("theme_style", "classic"), THEME_PALETTES["classic"])["bg_btn"]
+def get_sec_color(s): return SECTION_COLORS.get(str(s), get_cur_color()) if settings.get("adaptive_colors", True) else THEME_PALETTES.get(settings.get("theme_style", "classic"), THEME_PALETTES["classic"])["bg_btn"]
 def on_setting_toggle(k, v, s_map=None):
     settings[k] = v
     if k == "exam_mode" and v: settings["show_hints"] = False; s_map["show_hints"].value = False if s_map and "show_hints" in s_map else None
@@ -76,12 +76,12 @@ def show_settings_dialog():
     s_map["shuffle_options"] = ft.Switch(label="Перемешивать ответы", value=settings.get("shuffle_options"), on_change=lambda e: on_ch("shuffle_options", e))
     s_map["sounds"] = ft.Switch(label="Виброотклик", value=settings.get("sounds"), on_change=lambda e: on_ch("sounds", e))
     s_map["adaptive_colors"] = ft.Switch(label="Адаптивные цвета", value=settings.get("adaptive_colors", True), on_change=lambda e: [on_ch("adaptive_colors", e), show_menu()])
-    dd = ft.Dropdown(label="Цветовая палитра", value=settings.get("theme_style", "classic"), options=[ft.dropdown.Option("classic", "Классический"), ft.dropdown.Option("premium", "Премиум"), ft.dropdown.Option("eco", "Эко"), ft.dropdown.Option("monochrome", "Серая")], on_change=lambda e: [settings.update({"theme_style": e.control.value}), save_json(se_path, settings), show_menu()])
+    dd = ft.Dropdown(label="Палитра", value=settings.get("theme_style", "classic"), options=[ft.dropdown.Option("classic", "Оранжевая"), ft.dropdown.Option("premium", "Синяя"), ft.dropdown.Option("eco", "Зеленая"), ft.dropdown.Option("monochrome", "Серая")], on_change=lambda e: [settings.update({"theme_style": e.control.value}), save_json(se_path, settings), show_menu()])
     page.open(ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], s_map["shuffle_questions"], s_map["shuffle_options"], s_map["sounds"], s_map["adaptive_colors"], ft.Divider(), dd], spacing=10, scroll=ft.ScrollMode.AUTO, max_height=380)))
-def create_menu_card(title, count, on_click_action, is_sys=False, sec_id="1"):
-    bc = get_cur_color() if is_sys else get_sec_color(sec_id); t_low = title.lower()
-    clean_title = "ПРОТИВОПОЖАРНЫЙ РЕЖИМ" if "противопожарного" in t_low else ("ПЕРВАЯ ПОМОЩЬ" if "первой" in t_low else ("ОХРАНА ТРУДА В ЭУ" if "охране труда" in t_low else ("ПТЭ ЭЛЕКТРОУСТАНОВОК" if "технической эксплуатации" in t_low else ("ПРАВИЛА УСТРОЙСТВА ЭУ" if "устройства электроустановок" in t_low else ("ПРАВИЛА ПЕРЕКЛЮЧЕНИЙ" if "переключений" in t_low else ("РАБОТА С ПЕРСОНАЛОМ" if "персоналом" in t_low else title.upper()))))))
-    return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(clean_title, size=13, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, expand=True), ft.Container(content=ft.Text(str(count), size=12, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.colors.WHITE, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click_action, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(15))), margin=ft.margin.only(bottom=2))
+def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
+    bc = get_cur_color() if is_sys else get_sec_color(sec_id); tl = title.lower()
+    ct = "ПРОТИВОПОЖАРНЫЙ РЕЖИМ" if "противопожарного" in tl else ("ПЕРВАЯ ПОМОЩЬ" if "первой" in tl else ("ОХРАНА ТРУДА В ЭУ" if "охране труда" in tl else ("ПТЭ ЭЛЕКТРОУСТАНОВОК" if "технической эксплуатации" in tl else ("ПРАВИЛА УСТРОЙСТВА ЭУ" if "устройства электроустановок" in tl else ("ПРАВИЛА ПЕРЕКЛЮЧЕНИЙ" if "переключений" in tl else ("РАБОТА С ПЕРСОНАЛОМ" if "персоналом" in tl else title.upper()))))))
+    return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(ct, size=13, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, expand=True), ft.Container(content=ft.Text(str(count), size=12, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.colors.WHITE, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(15))), margin=ft.margin.only(bottom=2))
 def filter_search(e):
     v = str(e.control.value).strip().lower()
     if not v: show_menu(); return
