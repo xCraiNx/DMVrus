@@ -1,55 +1,35 @@
-name: Build Android APK
-
+name: Build Flet APK
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Позволяет запускать сборку только вручную кнопкой в интерфейсе GitHub
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-24.04
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Set up Java SDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu'
-        java-version: '17'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev lld tools apt-utils cmake
+          sudo apt-get install -y openjdk-17-jdk signapk unzip zip
+          pip install --upgrade pip
+          pip install buildozer cython git+https://github.com
 
-    - name: Set up Flutter SDK
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.24.0'
-        channel: 'stable'
+      - name: Build APK with Buildozer
+        run: |
+          yes | buildozer android debug
+        env:
+          BUILDOZER_WARN_ON_ROOT: 0
 
-    - name: Install Flet CLI
-      run: |
-        python -m pip install --upgrade pip
-        pip install "flet[cli]==0.25.2"
-
-    - name: Build APK
-      run: |
-        flet build apk
-
-    # ИСПРАВЛЕНО: Забираем первый готовый APK прямо из официальной папки сборки Flet
-    - name: Isolate Only Ready APK
-      run: |
-        mkdir -p output_apk
-        FIRST_APK=$(ls build/apk/*.apk | head -n 1)
-        cp "$FIRST_APK" output_apk/app-release.apk
-        echo "Успешно забран и изолирован файл: $FIRST_APK"
-
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: flet-app-apk
-        path: "output_apk/app-release.apk"
-
-
-
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flet-trainer-app
+          path: bin/*.apk
