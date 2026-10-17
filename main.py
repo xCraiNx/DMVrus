@@ -1,6 +1,9 @@
 import flet as ft, os, json, random, time, threading
-try: from database import QUESTIONS_TEXT
-except ImportError: QUESTIONS_TEXT = "1;1;Тест;1;Ответ"
+
+try: 
+    from database import QUESTIONS_TEXT
+except ImportError: 
+    QUESTIONS_TEXT = "1;1;Тест;1;Ответ;Разбор отсутствует."
 
 questions_data, state = [], {
     "active_page": None, "current_df": [], "index": 0, "score": 0, "start_time": 0,
@@ -44,6 +47,7 @@ def trigger_vibration(success=True):
         except: pass
 
 def toggle_fav_or_nb(path_target, is_nb=False):
+    if not state["current_df"] or state["index"] >= len(state["current_df"]): return
     q = state["current_df"][state["index"]]; items = load_json(path_target, [])
     idx = next((i for i, x in enumerate(items) if x.get("текст вопроса") == q.get("текст вопроса")), None)
     if idx is not None: items.pop(idx)
@@ -51,7 +55,6 @@ def toggle_fav_or_nb(path_target, is_nb=False):
     save_json(path_target, items)
     if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"]:
         state["current_df"].pop(state["index"])
-        # Исправление IndexError: если удалили последний элемент, смещаем индекс назад
         if state["index"] >= len(state["current_df"]): state["index"] = max(0, len(state["current_df"]) - 1)
         if not state["current_df"]: show_menu(); return
     load_question()
@@ -111,9 +114,8 @@ def show_menu():
     for s in sorted(sections.keys(), key=lambda x: int(x) if x.isdigit() else 999):
         ql = sections[s]
         menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", f"Раздел {s}"), len(ql), lambda e, sec=s: start_test(sec), sec_id=s))
-    search_input.on_change = filter_search; main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column]); page.update()
-
-def start_test(sec_name):
+        search_input.on_change = filter_search; main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column]); page.update()
+        def start_test(sec_name):
     state.update({"index": 0, "score": 0, "start_time": time.time(), "is_favorite_mode": sec_name=="FAVORITES", "is_review_mode": sec_name=="REVIEW", "is_notebook_mode": sec_name=="NOTEBOOK", "current_section_name": sec_name})
     if sec_name == "REVIEW": state["current_df"] = get_all_wrong()
     elif sec_name == "NOTEBOOK": state["current_df"] = get_all_notebook()
@@ -134,26 +136,30 @@ def load_question():
     is_n = any(x.get("текст вопроса") == q.get("текст вопроса") for x in get_all_notebook())
     notebook_btn.icon, notebook_btn.icon_color = (ft.Icons.BOOKMARK, ft.Colors.BLUE_500) if is_n else (ft.Icons.BOOKMARK_OUTLINED, ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
     ro, ct = [x.strip() for x in q.get("варианты", "").split("|") if x.strip()], q.get("ответ", "").strip()
-    state["is_multiple_choice"] = ct.startswith("[") and ct.endswith("]")
-    cl = [x.strip() for x in ct[1:-1].split(",") if x.strip()] if state["is_multiple_choice"] else [ct]
+    state["is_multiple_choice"] = (ct.startswith("[") and ct.endswith("]")) or ("," in ct)
+    
+    if state["is_multiple_choice"]:
+        clean_ct = ct.replace("[", "").replace("]", "")
+        cl = [x.strip() for x in clean_ct.split(",") if x.strip()]
+    else:
+        cl = [ct]
+        
     state["shuffled_options"] = [{"text": o, "is_correct": o in cl or str(ri+1) == ct or (str(ri+1) in cl)} for ri, o in enumerate(ro)]
     if settings["shuffle_options"]: random.shuffle(state["shuffled_options"])
     options_column.controls.clear()
     for i, opt in enumerate(state["shuffled_options"]):
         options_column.controls.append(ft.Container(content=ft.Text(opt["text"], size=14, color=ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK), padding=ft.padding.all(12), border=ft.border.all(1, ft.Colors.GREY_700 if settings["dark_theme"] else ft.Colors.GREY_400), border_radius=10, bgcolor=ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100, on_click=lambda e, idx=i: select_option(idx)))
     state["active_page"].update()
-
 def select_option(idx):
     if state["answered_current"]: return
     if state["is_multiple_choice"]:
         if idx in state["selected_options_indices"]: state["selected_options_indices"].remove(idx)
         else: state["selected_options_indices"].append(idx)
         confirm_btn.visible = len(state["selected_options_indices"]) > 0
-        for i, c in enumerate(options_column.controls): c.bgcolor = (ft.Colors.ORANGE_900 if settings["dark_theme"] else ft.Colors.ORANGE_100) if i in state["selected_options_indices"] else (ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100)
+        for i, c in enumerate(options_column.controls): c.bgcolor = (ft.Colors.ORANGE_900 if settings["dark_theme"] else ft.Colors.ORANGE_100) if i in state["selected_options_indices"] else (ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100)
         state["active_page"].update()
     else: 
         state["selected_options_indices"] = [idx]
-        state["answered_current"] = True
         check_answer()
 
 def check_answer():
@@ -172,16 +178,19 @@ def check_answer():
     if is_all: state["score"] += 1; remove_wrong_q(q.get("текст вопроса", "")); result_text.value = "🎉 Правильно!"; result_text.color = ft.Colors.GREEN_400 if settings["dark_theme"] else ft.Colors.GREEN_600
     else: add_wrong_q(q); result_text.value = f"💡 Подсказка:\n• {q.get('подсказка', 'Разбор отсутствует.')}"; result_text.color = ft.Colors.RED_400 if settings["dark_theme"] else ft.Colors.RED_600
     state["active_page"].update()
+    
     if is_all and settings["auto_next"] and not settings["exam_mode"]:
-        async def auto_next_task():
+        def next_after_delay():
             time.sleep(0.5)
             state["index"] += 1
-            load_question()
-        state["active_page"].run_task(auto_next_task)
+            state["active_page"].run_task(async_load_question)
+        threading.Thread(target=next_after_delay, daemon=True).start()
     else:
         state["index"] += 1; btn_text = "➡️ Следующий вопрос" if state["index"] < len(state["current_df"]) else "🏁 Завершить тест"
         confirm_btn.text, confirm_btn.visible = btn_text, True; confirm_btn.on_click = lambda e: load_question(); state["active_page"].update()
 
+async def async_load_question():
+    load_question()
 def setup_test_screen():
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
     mr = ft.Row([ft.Text(f"Вопрос {state['index'] + 1} из {len(state['current_df'])}", size=14, weight=ft.FontWeight.BOLD), ft.Row([fav_btn, notebook_btn, del_nb_btn] if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"] else [fav_btn, notebook_btn], spacing=0)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
@@ -197,13 +206,22 @@ def main(page: ft.Page):
     page.controls.clear(); page.add(ft.SafeArea(content=main_layout))
     back_to_menu_btn.on_click = lambda e: show_menu()
     fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click = lambda e: toggle_fav_or_nb(fav_path), lambda e: toggle_fav_or_nb(nb_path), lambda e: toggle_fav_or_nb(nb_path)
+    
     if not questions_data:
         local_data = []
         for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
             if not line.strip() or line.startswith("Раздел;"): continue
             p = line.split(";")
-            if len(p) >= 5: local_data.append({"раздел": p[0].strip(), "номер": p[1].strip(), "текст вопроса": p[2].strip(), "ответ": p[3].strip(), "варианты": p[4].strip(), "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."})
-        questions_data = local_data if local_data else [{"раздел": "1", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2"}]
+            if len(p) >= 5: 
+                local_data.append({
+                    "раздел": p[0].strip(), 
+                    "номер": p[1].strip(), 
+                    "текст вопроса": p[2].strip(), 
+                    "ответ": p[3].strip(), 
+                    "варианты": p[4].strip(), 
+                    "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."
+                })
+        questions_data = local_data if local_data else [{"раздел": "1", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор отсутствует."}]
     show_menu()
 
 ft.app(target=main)
