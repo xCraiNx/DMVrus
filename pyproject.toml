@@ -2,10 +2,11 @@
 name = "flet_trainer_app"
 version = "1.0.0"
 dependencies = [
-    "flet"
+    "flet==1.0.4"
 ]
 
 [tool.flet]
+main_module = "main"
 product = "DMBrus"
 org = "org.trainer"
 
