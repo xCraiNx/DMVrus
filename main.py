@@ -200,5 +200,3 @@ def main(page: ft.Page):
                 try: timer_text.value = f"⏱️ Время: {m:02d}:{s:02d}"; page.update()
                 except: pass
     threading.Thread(target=timer_loop, daemon=True).start()
-if __name__ == "__main__":
-    ft.app(target=main)
