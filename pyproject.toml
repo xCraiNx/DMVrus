@@ -2,7 +2,7 @@
 name = "flet_trainer_app"
 version = "1.0.0"
 dependencies = [
-    "flet==1.0.4"
+    "flet"
 ]
 
 [tool.flet]
