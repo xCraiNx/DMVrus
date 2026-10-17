@@ -109,7 +109,7 @@ def show_menu():
     sections = {}
     for q in questions_data:
         raw_sec = str(q.get("раздел", "1")).strip()
-        # ИСПРАВЛЕНО: берем первый элемент списка после сплита и очищаем его от пробелов
+        # ИСПРАВЛЕНО: берем первый элемент строки ДО точки и очищаем его от пробелов
         sec_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
         sections[sec_id] = sections.get(sec_id, []) + [q]
     menu_items_column.controls.clear()
@@ -124,6 +124,7 @@ def show_menu():
     search_input.on_change = filter_search
     main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column])
     page.update()
+
 def start_test(sec_name):
     state.update({
         "index": 0, 
@@ -272,9 +273,11 @@ def check_answer():
         state["active_page"].update()
 
 async def async_load_question():
+    import asyncio
     await asyncio.sleep(0.5)
-    state["index"] += 1
+    state["index"] += 1  # Индекс увеличивается ТУТ
     load_question()
+
 
 def setup_test_screen():
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
