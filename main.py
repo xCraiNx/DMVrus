@@ -1,4 +1,6 @@
 import flet as ft, os, json, random, time, threading
+questions_data = []  # ХАРДКОРНОЕ ДОБАВЛЕНИЕ ГЛОБАЛЬНОЙ ПЕРЕМЕННОЙ!
+
 try: from database import QUESTIONS_TEXT
 except ImportError: QUESTIONS_TEXT = "Раздел;Номер;Текст вопроса;Ответ;Варианты\n1;1;Тест;1;Ответ"
 state = {"active_page": None, "current_df": [], "index": 0, "score": 0, "start_time": 0, "app_running": True, "is_favorite_mode": False, "is_review_mode": False, "is_notebook_mode": False, "is_search_test_mode": False, "current_section_name": "", "selected_options_indices": [], "can_tap_to_next": False, "answered_current": False, "original_options": [], "shuffled_options": [], "search_results": [], "is_multiple_choice": False}
