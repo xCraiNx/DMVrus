@@ -203,7 +203,7 @@ def main(page: ft.Page):
                 except: pass
     threading.Thread(target=timer_loop, daemon=True).start()
 
-    # ЖЕЛЕЗОБЕТОННАЯ ЗАГЛУШКА ДЛЯ УДЕРЖАНИЯ ANDROID UI ПОТОКА:
     while state["app_running"]:
         time.sleep(1)
+
 
