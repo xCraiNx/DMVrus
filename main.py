@@ -95,8 +95,10 @@ def show_menu():
     page = state["active_page"]; page.controls.clear(); page.scroll = ft.ScrollMode.AUTO; state.update({"is_favorite_mode": False, "is_review_mode": False, "is_notebook_mode": False, "is_search_test_mode": False, "current_section_name": "", "current_df": []})
     tc = get_cur_color(); header = ft.Row([ft.Text("Тренажёр ОТ и ЭБ", size=24, weight=ft.FontWeight.BOLD, expand=True), ft.Row([ft.IconButton(icon=ft.Icons.BAR_CHART, icon_color=tc, on_click=lambda e: show_stats_dialog()), ft.IconButton(icon=ft.Icons.SETTINGS, icon_color=tc, on_click=lambda e: show_settings_dialog()), ft.IconButton(icon=ft.Icons.REFRESH, icon_color=tc, on_click=lambda e: [clear_saved_progress(), show_menu()])], spacing=0)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
     sections = {}
+# Замени строки 58-60 на этот безопасный разбор:
     for q in questions_data:
-        raw_sec = str(q.get("раздел", "1")).strip(); sec_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
+        raw_sec = str(q.get("раздел", "1")).strip()
+        sec_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
         sections[sec_id] = sections.get(sec_id, []) + [q]
     menu_items_column.controls.clear()
     r1 = ft.Row([ft.Container(create_menu_card("🟥 Ошибки", len(get_all_wrong()), lambda e: start_test("REVIEW"), True), expand=True), ft.Container(create_menu_card("🟦 Конспект", len(get_all_notebook()), lambda e: start_test("NOTEBOOK"), True), expand=True)], spacing=8)
@@ -192,7 +194,8 @@ def main(page: ft.Page):
                 p = line.split(";")
                 if len(p) >= 5:
                     raw_sec = p[0].strip(); clean_sec = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
-                    local_data.append({"раздел": clean_sec, "номер": p[1].strip(), "текст вопроса": p[2].strip(), "ответ": p[3].strip(), "варианты": p[4].strip(), "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."})
+                    local_data.append({"раздел": raw_sec, "номер": p[1].strip(), "текст вопроса": p[2].strip(), "ответ": p[3].strip(), "варианты": p[4].strip(), "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."})
+
             questions_data = local_data if local_data else [{"раздел": "1", "номер": "1", "текст вопроса": "Тест", "ответ": "Ответ", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор отсутствует."}]
             
             # Рендерим меню только после того, как все 731 строка считаны в память
