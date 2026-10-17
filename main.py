@@ -59,9 +59,10 @@ def toggle_fav_or_nb(path_target, is_nb=False):
         state["current_df"].pop(state["index"])
         if state["index"] >= len(state["current_df"]): state["index"] = max(0, len(state["current_df"]) - 1)
         if not state["current_df"]: show_menu(); return
+        load_question()
+        return
 
-    # ИСПРАВЛЕНО: Вместо тяжелого load_question() просто меняем иконку активной кнопки,
-    # не сбрасывая состояние ответов и не ломая рендеринг вариантов.
+    # ИСПРАВЛЕНО: Точечно обновляем только иконки кнопок без полной перезагрузки вопроса
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
     fav_btn.icon = ft.Icons.STAR if is_f else ft.Icons.STAR_OUTLINED
     fav_btn.icon_color = ft.Colors.AMBER_500 if is_f else (ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
@@ -73,7 +74,7 @@ def toggle_fav_or_nb(path_target, is_nb=False):
 
 async def async_load_question():
     await asyncio.sleep(0.5)
-    # ИСПРАВЛЕНО: Строго прерываем функцию через return при финише
+    # ИСПРАВЛЕНО: Добавлен обязательный return для жесткого прерывания корутины при финише
     if state["answered_current"] and state["active_page"]:
         if (state["index"] + 1) >= len(state["current_df"]):
             finish_test()
@@ -81,7 +82,6 @@ async def async_load_question():
         else:
             state["index"] += 1
             load_question()
-
     # Возвращаем статус на место для фонового потока автоперехода
     state["answered_current"] = was_answered
 
