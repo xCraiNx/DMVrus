@@ -217,27 +217,58 @@ def select_option(idx):
         check_answer()
 
 def check_answer():
-    state["answered_current"] = True; confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
+    state["answered_current"] = True
+    confirm_btn.visible = False
+    q = state["current_df"][state["index"]]
+    is_all = True
+    
     if state["is_multiple_choice"]:
         for i, o in enumerate(state["shuffled_options"]):
-            if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
+            if o["is_correct"] != (i in state["selected_options_indices"]): 
+                is_all = False
     else:
-        if not state["selected_options_indices"]: is_all = False
-        else: is_all = state["shuffled_options"][state["selected_options_indices"][0]]["is_correct"]
+        if not state["selected_options_indices"]: 
+            is_all = False
+        else: 
+            is_all = state["shuffled_options"][state["selected_options_indices"][0]]["is_correct"]
+            
     trigger_vibration(success=is_all)
+    
+    # ИСПРАВЛЕННАЯ ПОДCВЕТКА ОШИБОК:
     for i, c in enumerate(options_column.controls):
-        o = state["shuffled_options"][i]; is_s = i in state["selected_options_indices"]
-        if o["is_correct"]: c.bgcolor = ft.Colors.GREEN_900 if settings["dark_theme"] else ft.Colors.GREEN_100
-        elif is_s: c.bgcolor = ft.Colors.RED_900 if settings["dark_theme"] else ft.Colors.RED_100
-    if is_all: state["score"] += 1; remove_wrong_q(q.get("текст вопроса", "")); result_text.value = "🎉 Правильно!"; result_text.color = ft.Colors.GREEN_400 if settings["dark_theme"] else ft.Colors.GREEN_600
-    else: add_wrong_q(q); result_text.value = f"💡 Подсказка:\n• {q.get('подсказка', 'Разбор отсутствует.')}"; result_text.color = ft.Colors.RED_400 if settings["dark_theme"] else ft.Colors.RED_600
+        o = state["shuffled_options"][i]
+        is_s = i in state["selected_options_indices"]  # выбрал ли пользователь
+        
+        if o["is_correct"] and is_s:
+            # Угадал правильный
+            c.bgcolor = ft.Colors.GREEN_900 if settings["dark_theme"] else ft.Colors.GREEN_100
+        elif o["is_correct"] and not is_s:
+            # Правильный, но пользователь его пропустил (актуально для Multi-choice)
+            c.bgcolor = ft.Colors.BLUE_900 if settings["dark_theme"] else ft.Colors.BLUE_100
+        elif not o["is_correct"] and is_s:
+            # Ошибся и выбрал неправильный
+            c.bgcolor = ft.Colors.RED_900 if settings["dark_theme"] else ft.Colors.RED_100
+            
+    if is_all: 
+        state["score"] += 1
+        remove_wrong_q(q.get("текст вопроса", ""))
+        result_text.value = "🎉 Правильно!"
+        result_text.color = ft.Colors.GREEN_400 if settings["dark_theme"] else ft.Colors.GREEN_600
+    else: 
+        add_wrong_q(q)
+        result_text.value = f"💡 Подсказка:\n• {q.get('подсказка', 'Разбор отсутствует.')}"
+        result_text.color = ft.Colors.RED_400 if settings["dark_theme"] else ft.Colors.RED_600
+        
     state["active_page"].update()
     
     if is_all and settings["auto_next"] and not settings["exam_mode"]:
         state["active_page"].run_task(async_load_question)
     else:
-        state["index"] += 1; btn_text = "➡️ Следующий вопрос" if state["index"] < len(state["current_df"]) else "🏁 Завершить тест"
-        confirm_btn.text, confirm_btn.visible = btn_text, True; confirm_btn.on_click = lambda e: load_question(); state["active_page"].update()
+        state["index"] += 1
+        btn_text = "➡️ Следующий вопрос" if state["index"] < len(state["current_df"]) else "🏁 Завершить тест"
+        confirm_btn.text, confirm_btn.visible = btn_text, True
+        confirm_btn.on_click = lambda e: load_question()
+        state["active_page"].update()
 
 async def async_load_question():
     import asyncio
