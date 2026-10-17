@@ -114,8 +114,12 @@ def show_menu():
     for s in sorted(sections.keys(), key=lambda x: int(x) if x.isdigit() else 999):
         ql = sections[s]
         menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", f"Раздел {s}"), len(ql), lambda e, sec=s: start_test(sec), sec_id=s))
-        search_input.on_change = filter_search; main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column]); page.update()
-        def start_test(sec_name):
+    
+    search_input.on_change = filter_search
+    main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column])
+    page.update()
+
+def start_test(sec_name):
     state.update({"index": 0, "score": 0, "start_time": time.time(), "is_favorite_mode": sec_name=="FAVORITES", "is_review_mode": sec_name=="REVIEW", "is_notebook_mode": sec_name=="NOTEBOOK", "current_section_name": sec_name})
     if sec_name == "REVIEW": state["current_df"] = get_all_wrong()
     elif sec_name == "NOTEBOOK": state["current_df"] = get_all_notebook()
@@ -126,6 +130,8 @@ def show_menu():
     if not state["current_df"]: state["active_page"].open(ft.AlertDialog(title=ft.Text("📭 Пусто"), content=ft.Text("Нет вопросов."))); return
     if settings["shuffle_questions"] and sec_name not in ["REVIEW", "NOTEBOOK", "FAVORITES", "SEARCH_RESULT", "RANDOM_20"]: random.shuffle(state["current_df"])
     setup_test_screen(); load_question()
+
+def load_question():
 
 def load_question():
     if state["index"] >= len(state["current_df"]): finish_test(); return
