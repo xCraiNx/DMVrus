@@ -56,8 +56,11 @@ def toggle_fav_or_nb(path_target, is_nb=False):
     save_json(path_target, items)
     if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"]:
         state["current_df"].pop(state["index"])
-        if state["index"] >= len(state["current_df"]): state["index"] = max(0, len(state["current_df"]) - 1)
-        if not state["current_df"]: show_menu(); return
+        if not state["current_df"]: 
+            show_menu()
+            return
+        if state["index"] >= len(state["current_df"]): 
+            state["index"] = len(state["current_df"]) - 1
     load_question()
 
 question_text, result_text, timer_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(size=14, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER), ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
@@ -276,14 +279,14 @@ def next_question():
     load_question()
 
 async def async_load_question():
-    # ИСПРАВЛЕНО: Удален лишний локальный импорт asyncio
     await asyncio.sleep(0.5)
-    # Проверяем, не успел ли пользователь переключить состояние интерфейса за 0.5 сек фриза
-    if state["answered_current"]:
-        state["index"] += 1
-        load_question()
-
-
+    # ИСПРАВЛЕНО: строгая проверка на границы списка перед переключением индекса
+    if state["answered_current"] and state["active_page"]:
+        if (state["index"] + 1) >= len(state["current_df"]):
+            finish_test()
+        else:
+            state["index"] += 1
+            load_question()
 
 def setup_test_screen():
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
