@@ -1,5 +1,5 @@
 import flet as ft, os, json, random, time, threading
-questions_data = []  # ХАРДКОРНОЕ ДОБАВЛЕНИЕ ГЛОБАЛЬНОЙ ПЕРЕМЕННОЙ!
+questions_data = []  # Глобальный массив базы вопросов
 
 try: from database import QUESTIONS_TEXT
 except ImportError: QUESTIONS_TEXT = "Раздел;Номер;Текст вопроса;Ответ;Варианты\n1;1;Тест;1;Ответ"
@@ -181,19 +181,26 @@ def main(page: ft.Page):
     page.add = lambda *controls: [main_layout.controls.extend(controls), page.update()]; page.controls.clear(); page.controls.append(ft.SafeArea(content=main_layout)); page.update()
     try:
         global settings, questions_data; page.theme_mode = ft.ThemeMode.DARK; search_input.on_change = filter_search
+        
+        # Индикатор загрузки базы при первом холодном запуске
+        page.add(ft.Container(content=ft.Column([ft.ProgressRing(color=ft.Colors.ORANGE_700), ft.Text("Загрузка базы вопросов...", size=16, weight=ft.FontWeight.W_500)], horizontal_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.CENTER), expand=True))
+        
         def async_parser():
             global questions_data; local_data = []
             for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
                 if not line.strip() or line.startswith("Раздел;"): continue
                 p = line.split(";")
-                if len(p) >= 4:
+                if len(p) >= 5:
                     raw_sec = p[0].strip(); clean_sec = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
                     local_data.append({"раздел": clean_sec, "номер": p[1].strip(), "текст вопроса": p[2].strip(), "ответ": p[3].strip(), "варианты": p[4].strip(), "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."})
             questions_data = local_data if local_data else [{"раздел": "1", "номер": "1", "текст вопроса": "Тест", "ответ": "Ответ", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор отсутствует."}]
+            
+            # Рендерим меню только после того, как все 731 строка считаны в память
             page.run_task(lambda: show_menu())
+            
         back_to_menu_btn.on_click = lambda e: [clear_saved_progress(), show_menu()]
         fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click, confirm_btn.on_click = toggle_favorite, toggle_notebook, delete_current_from_notebook, check_answer
-        show_menu()
+        
         threading.Thread(target=async_parser, daemon=True).start()
     except Exception as e:
         import traceback; page.controls.clear(); page.controls.append(ft.SafeArea(content=ft.Column([ft.Text("🚨 СБОЙ:", size=20, weight=ft.FontWeight.BOLD), ft.Container(content=ft.Text(traceback.format_exc(), size=12), bgcolor=ft.Colors.GREY_900, padding=10, expand=True)], scroll=ft.ScrollMode.AUTO))); page.update(); return
@@ -208,3 +215,4 @@ def main(page: ft.Page):
 
     while state["app_running"]:
         time.sleep(1)
+
