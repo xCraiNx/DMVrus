@@ -132,8 +132,6 @@ def start_test(sec_name):
     setup_test_screen(); load_question()
 
 def load_question():
-
-def load_question():
     if state["index"] >= len(state["current_df"]): finish_test(); return
     q = state["current_df"][state["index"]]; state.update({"answered_current": False, "selected_options_indices": []})
     result_text.value, confirm_btn.visible = "", False; progress_bar.value = state["index"] / len(state["current_df"]); progress_bar.color = get_sec_color(q.get("раздел", "1")); question_text.value = f"{q.get('текст вопроса', '')}"
