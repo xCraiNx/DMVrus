@@ -238,19 +238,15 @@ def check_answer():
             
     trigger_vibration(success=is_all)
     
-    # ИСПРАВЛЕННАЯ ПОДCВЕТКА ОШИБОК:
     for i, c in enumerate(options_column.controls):
         o = state["shuffled_options"][i]
-        is_s = i in state["selected_options_indices"]  # выбрал ли пользователь
+        is_s = i in state["selected_options_indices"]
         
         if o["is_correct"] and is_s:
-            # Угадал правильный
             c.bgcolor = ft.Colors.GREEN_900 if settings["dark_theme"] else ft.Colors.GREEN_100
         elif o["is_correct"] and not is_s:
-            # Правильный, но пользователь его пропустил (актуально для Multi-choice)
             c.bgcolor = ft.Colors.BLUE_900 if settings["dark_theme"] else ft.Colors.BLUE_100
         elif not o["is_correct"] and is_s:
-            # Ошибся и выбрал неправильный
             c.bgcolor = ft.Colors.RED_900 if settings["dark_theme"] else ft.Colors.RED_100
             
     if is_all: 
@@ -268,17 +264,25 @@ def check_answer():
     if is_all and settings["auto_next"] and not settings["exam_mode"]:
         state["active_page"].run_task(async_load_question)
     else:
-        state["index"] += 1
-        btn_text = "➡️ Следующий вопрос" if state["index"] < len(state["current_df"]) else "🏁 Завершить тест"
+        # ИСПРАВЛЕНО: Индекс ТУТ больше не увеличиваем заранее!
+        btn_text = "➡️ Следующий вопрос" if (state["index"] + 1) < len(state["current_df"]) else "🏁 Завершить тест"
         confirm_btn.text, confirm_btn.visible = btn_text, True
-        confirm_btn.on_click = lambda e: load_question()
+        # При клике сначала инкрементируем индекс, а затем загружаем вопрос
+        confirm_btn.on_click = lambda e: next_question()
         state["active_page"].update()
 
-async def async_load_question():
-    import asyncio
-    await asyncio.sleep(0.5)
-    state["index"] += 1  # Индекс увеличивается ТУТ
+def next_question():
+    state["index"] += 1
     load_question()
+
+async def async_load_question():
+    # ИСПРАВЛЕНО: Удален лишний локальный импорт asyncio
+    await asyncio.sleep(0.5)
+    # Проверяем, не успел ли пользователь переключить состояние интерфейса за 0.5 сек фриза
+    if state["answered_current"]:
+        state["index"] += 1
+        load_question()
+
 
 
 def setup_test_screen():
