@@ -54,14 +54,18 @@ def toggle_fav_or_nb(path_target, is_nb=False):
     if idx is not None: items.pop(idx)
     else: items.append(q)
     save_json(path_target, items)
+    
+    # Сохраняем текущий статус, чтобы load_question его не затерла
+    was_answered = state["answered_current"]
+    
     if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"]:
         state["current_df"].pop(state["index"])
-        if not state["current_df"]: 
-            show_menu()
-            return
-        if state["index"] >= len(state["current_df"]): 
-            state["index"] = len(state["current_df"]) - 1
+        if state["index"] >= len(state["current_df"]): state["index"] = max(0, len(state["current_df"]) - 1)
+        if not state["current_df"]: show_menu(); return
+        
     load_question()
+    # Возвращаем статус на место для фонового потока автоперехода
+    state["answered_current"] = was_answered
 
 question_text, result_text, timer_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(size=14, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER), ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
 progress_bar, square_style = ft.ProgressBar(value=0.0, height=8, color=ft.Colors.ORANGE_700), ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
@@ -280,7 +284,7 @@ def next_question():
 
 async def async_load_question():
     await asyncio.sleep(0.5)
-    # ИСПРАВЛЕНО: строгая проверка на границы списка перед переключением индекса
+    # Проверяем, что страница жива, ответ дан и инкремент не выйдет за рамки массива
     if state["answered_current"] and state["active_page"]:
         if (state["index"] + 1) >= len(state["current_df"]):
             finish_test()
