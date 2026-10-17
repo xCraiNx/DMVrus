@@ -313,17 +313,23 @@ def main(page: ft.Page):
         for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
             if not line.strip() or line.startswith("Раздел;"): continue
             p = line.split(";")
+            # Безопасная проверка: в строке должно быть строго 5 или более элементов
             if len(p) >= 5: 
+                # Очищаем название раздела для красивого вывода на кнопках меню
+                raw_section = p[0].strip()
+                display_section = raw_section.split(".")[1].strip() if "." in raw_section else raw_section
+                
                 local_data.append({
-                    "раздел": p[0].strip(), 
+                    "раздел": display_section, 
                     "номер": p[1].strip(), 
                     "текст вопроса": p[2].strip(), 
                     "ответ": p[3].strip(), 
                     "варианты": p[4].strip(), 
-                    "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."
+                    "подсказка": p[5].strip() if len(p) > 5 else "Разбор данного вопроса в базе отсутствует."
                 })
-        questions_data = local_data if local_data else [{"раздел": "1", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор отсутствует."}]
+        questions_data = local_data if local_data else [{"раздел": "Тест", "номер": "1", "текст вопроса": "Ошибка загрузки базы данных", "ответ": "1", "варианты": "Ок", "подсказка": "Проверьте разделители."}]
     show_menu()
+
 
 ft.app(target=main)
     
