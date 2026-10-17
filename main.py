@@ -313,11 +313,15 @@ def main(page: ft.Page):
         for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
             if not line.strip() or line.startswith("Раздел;"): continue
             p = line.split(";")
-            # Безопасная проверка: в строке должно быть строго 5 или более элементов
             if len(p) >= 5: 
-                # Очищаем название раздела для красивого вывода на кнопках меню
                 raw_section = p[0].strip()
-                display_section = raw_section.split(".")[1].strip() if "." in raw_section else raw_section
+                
+                # ИСПРАВЛЕНО: Безопасно вытаскиваем только номер (цифру до первой точки)
+                if "." in raw_section:
+                    sec_num = raw_section.split(".")[0].strip() # Вытащит "1", "2" и т.д.
+                    display_section = f"Раздел {sec_num}" # На кнопке будет написано "РАЗДЕЛ 1"
+                else:
+                    display_section = raw_section
                 
                 local_data.append({
                     "раздел": display_section, 
@@ -327,8 +331,9 @@ def main(page: ft.Page):
                     "варианты": p[4].strip(), 
                     "подсказка": p[5].strip() if len(p) > 5 else "Разбор данного вопроса в базе отсутствует."
                 })
-        questions_data = local_data if local_data else [{"раздел": "Тест", "номер": "1", "текст вопроса": "Ошибка загрузки базы данных", "ответ": "1", "варианты": "Ок", "подсказка": "Проверьте разделители."}]
+        questions_data = local_data if local_data else [{"раздел": "Раздел 1", "номер": "1", "текст вопроса": "Ошибка загрузки базы данных", "ответ": "1", "варианты": "Ок", "подсказка": "Проверьте разделители."}]
     show_menu()
+
 
 
 ft.app(target=main)
