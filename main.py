@@ -1,4 +1,4 @@
-import flet as ft, os, json, random, time, threading
+import flet as ft, os, json, random, time, asyncio
 
 try: 
     from database import QUESTIONS_TEXT
@@ -73,6 +73,9 @@ def show_stats_dialog():
 
 def show_settings_dialog():
     page, s_map = state["active_page"], {}
+    def close_and_refresh(e):
+        page.close(dlg)
+        show_menu()
     def on_ch(k, v):
         settings[k] = v
         if k == "exam_mode" and v: settings["show_hints"] = False; s_map["show_hints"].value = False
@@ -82,8 +85,9 @@ def show_settings_dialog():
     s_map["exam_mode"] = ft.Switch(label="Режим экзамена", value=settings["exam_mode"], on_change=lambda e: on_ch("exam_mode", e.control.value))
     s_map["show_hints"] = ft.Switch(label="Показывать подсказки", value=settings["show_hints"], on_change=lambda e: on_ch("show_hints", e.control.value))
     s_map["auto_next"] = ft.Switch(label="Автопереход (0.5 сек)", value=settings["auto_next"], on_change=lambda e: on_ch("auto_next", e.control.value))
-    dd = ft.Dropdown(label="Палитра", value=settings["theme_style"], options=[ft.dropdown.Option(k, v) for k, v in [("classic", "Оранжевая"), ("premium", "Синяя"), ("eco", "Зеленая")]], on_change=lambda e: [settings.update({"theme_style": e.control.value}), save_json(se_path, settings), show_menu()])
-    page.open(ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], s_map["auto_next"], ft.Divider(), dd], scroll=ft.ScrollMode.AUTO, max_height=380)))
+    dd = ft.Dropdown(label="Палитра", value=settings["theme_style"], options=[ft.dropdown.Option(k, v) for k, v in [("classic", "Оранжевая"), ("premium", "Синяя"), ("eco", "Зеленая")]], on_change=lambda e: [settings.update({"theme_style": e.control.value}), save_json(se_path, settings), close_and_refresh(None)])
+    dlg = ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], s_map["auto_next"], ft.Divider(), dd], scroll=ft.ScrollMode.AUTO, max_height=380))
+    page.open(dlg)
 
 def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
     bc = get_cur_color() if is_sys else get_sec_color(sec_id)
@@ -113,32 +117,66 @@ def show_menu():
     menu_items_column.controls.extend([r1, r2, ft.Container(height=5)])
     for s in sorted(sections.keys(), key=lambda x: int(x) if x.isdigit() else 999):
         ql = sections[s]
-        menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", f"Раздел {s}"), len(ql), lambda e, sec=s: start_test(sec), sec_id=s))
+        if ql:
+            menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", f"Раздел {s}"), len(ql), lambda e, sec=s: start_test(sec), sec_id=s))
     
     search_input.on_change = filter_search
     main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column])
     page.update()
-
 def start_test(sec_name):
-    state.update({"index": 0, "score": 0, "start_time": time.time(), "is_favorite_mode": sec_name=="FAVORITES", "is_review_mode": sec_name=="REVIEW", "is_notebook_mode": sec_name=="NOTEBOOK", "current_section_name": sec_name})
-    if sec_name == "REVIEW": state["current_df"] = get_all_wrong()
-    elif sec_name == "NOTEBOOK": state["current_df"] = get_all_notebook()
-    elif sec_name == "FAVORITES": state["current_df"] = load_json(fav_path, [])
-    elif sec_name == "SEARCH_RESULT": state["current_df"] = state["search_results"]
-    elif sec_name == "RANDOM_20": state["current_df"] = random.sample(questions_data, min(20, len(questions_data)))
-    else: state["current_df"] = [q for q in questions_data if str(q.get("раздел", "1")).strip() == str(sec_name).strip()]
-    if not state["current_df"]: state["active_page"].open(ft.AlertDialog(title=ft.Text("📭 Пусто"), content=ft.Text("Нет вопросов."))); return
-    if settings["shuffle_questions"] and sec_name not in ["REVIEW", "NOTEBOOK", "FAVORITES", "SEARCH_RESULT", "RANDOM_20"]: random.shuffle(state["current_df"])
-    setup_test_screen(); load_question()
-
+    state.update({
+        "index": 0, 
+        "score": 0, 
+        "start_time": time.time(), 
+        "is_favorite_mode": sec_name == "FAVORITES", 
+        "is_review_mode": sec_name == "REVIEW", 
+        "is_notebook_mode": sec_name == "NOTEBOOK", 
+        "current_section_name": sec_name
+    })
+    
+    if sec_name == "REVIEW": 
+        state["current_df"] = get_all_wrong()
+    elif sec_name == "NOTEBOOK": 
+        state["current_df"] = get_all_notebook()
+    elif sec_name == "FAVORITES": 
+        state["current_df"] = load_json(fav_path, [])
+    elif sec_name == "SEARCH_RESULT": 
+        state["current_df"] = state["search_results"]
+    elif sec_name == "RANDOM_20": 
+        state["current_df"] = random.sample(questions_data, min(20, len(questions_data)))
+    else: 
+        state["current_df"] = [q for q in questions_data if str(q.get("раздел", "1")).strip() == str(sec_name).strip()]
+        
+    if not state["current_df"]: 
+        state["active_page"].open(ft.AlertDialog(title=ft.Text("📭 Пусто"), content=ft.Text("Нет вопросов.")))
+        return
+        
+    if settings["shuffle_questions"] and sec_name not in ["REVIEW", "NOTEBOOK", "FAVORITES", "SEARCH_RESULT", "RANDOM_20"]: 
+        random.shuffle(state["current_df"])
+        
+    setup_test_screen()
+    load_question()
 def load_question():
-    if state["index"] >= len(state["current_df"]): finish_test(); return
-    q = state["current_df"][state["index"]]; state.update({"answered_current": False, "selected_options_indices": []})
-    result_text.value, confirm_btn.visible = "", False; progress_bar.value = state["index"] / len(state["current_df"]); progress_bar.color = get_sec_color(q.get("раздел", "1")); question_text.value = f"{q.get('текст вопроса', '')}"
+    if state["index"] >= len(state["current_df"]): 
+        finish_test()
+        return
+        
+    q = state["current_df"][state["index"]]
+    state.update({"answered_current": False, "selected_options_indices": []})
+    
+    result_text.value, confirm_btn.visible = "", False
+    progress_bar.value = state["index"] / len(state["current_df"])
+    progress_bar.color = get_sec_color(q.get("раздел", "1"))
+    question_text.value = f"{q.get('текст вопроса', '')}"
+    
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
-    fav_btn.icon, fav_btn.icon_color = (ft.Icons.STAR, ft.Colors.AMBER_500) if is_f else (ft.Icons.STAR_OUTLINED, ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
+    fav_btn.icon = ft.Icons.STAR if is_f else ft.Icons.STAR_OUTLINED
+    fav_btn.icon_color = ft.Colors.AMBER_500 if is_f else (ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
+    
     is_n = any(x.get("текст вопроса") == q.get("текст вопроса") for x in get_all_notebook())
-    notebook_btn.icon, notebook_btn.icon_color = (ft.Icons.BOOKMARK, ft.Colors.BLUE_500) if is_n else (ft.Icons.BOOKMARK_OUTLINED, ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
+    notebook_btn.icon = ft.Icons.BOOKMARK if is_n else ft.Icons.BOOKMARK_OUTLINED
+    notebook_btn.icon_color = ft.Colors.BLUE_500 if is_n else (ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
+    
     ro, ct = [x.strip() for x in q.get("варианты", "").split("|") if x.strip()], q.get("ответ", "").strip()
     state["is_multiple_choice"] = (ct.startswith("[") and ct.endswith("]")) or ("," in ct)
     
@@ -149,18 +187,30 @@ def load_question():
         cl = [ct]
         
     state["shuffled_options"] = [{"text": o, "is_correct": o in cl or str(ri+1) == ct or (str(ri+1) in cl)} for ri, o in enumerate(ro)]
-    if settings["shuffle_options"]: random.shuffle(state["shuffled_options"])
+    if settings["shuffle_options"]: 
+        random.shuffle(state["shuffled_options"])
+        
     options_column.controls.clear()
     for i, opt in enumerate(state["shuffled_options"]):
-        options_column.controls.append(ft.Container(content=ft.Text(opt["text"], size=14, color=ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK), padding=ft.padding.all(12), border=ft.border.all(1, ft.Colors.GREY_700 if settings["dark_theme"] else ft.Colors.GREY_400), border_radius=10, bgcolor=ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100, on_click=lambda e, idx=i: select_option(idx)))
+        options_column.controls.append(ft.Container(
+            content=ft.Text(opt["text"], size=14, color=ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK), 
+            padding=ft.padding.all(12), 
+            border=ft.border.all(1, ft.Colors.GREY_700 if settings["dark_theme"] else ft.Colors.GREY_400), 
+            border_radius=10, 
+            bgcolor=ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100, 
+            on_click=lambda e, idx=i: select_option(idx)
+        ))
     state["active_page"].update()
 def select_option(idx):
     if state["answered_current"]: return
     if state["is_multiple_choice"]:
-        if idx in state["selected_options_indices"]: state["selected_options_indices"].remove(idx)
-        else: state["selected_options_indices"].append(idx)
+        if idx in state["selected_options_indices"]: 
+            state["selected_options_indices"].remove(idx)
+        else: 
+            state["selected_options_indices"].append(idx)
         confirm_btn.visible = len(state["selected_options_indices"]) > 0
-        for i, c in enumerate(options_column.controls): c.bgcolor = (ft.Colors.ORANGE_900 if settings["dark_theme"] else ft.Colors.ORANGE_100) if i in state["selected_options_indices"] else (ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100)
+        for i, c in enumerate(options_column.controls): 
+            c.bgcolor = (ft.Colors.ORANGE_900 if settings["dark_theme"] else ft.Colors.ORANGE_100) if i in state["selected_options_indices"] else (ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100)
         state["active_page"].update()
     else: 
         state["selected_options_indices"] = [idx]
@@ -184,16 +234,15 @@ def check_answer():
     state["active_page"].update()
     
     if is_all and settings["auto_next"] and not settings["exam_mode"]:
-        def next_after_delay():
-            time.sleep(0.5)
-            state["index"] += 1
-            state["active_page"].run_task(async_load_question)
-        threading.Thread(target=next_after_delay, daemon=True).start()
+        state["active_page"].run_task(async_load_question)
     else:
         state["index"] += 1; btn_text = "➡️ Следующий вопрос" if state["index"] < len(state["current_df"]) else "🏁 Завершить тест"
         confirm_btn.text, confirm_btn.visible = btn_text, True; confirm_btn.on_click = lambda e: load_question(); state["active_page"].update()
 
 async def async_load_question():
+    import asyncio
+    await asyncio.sleep(0.5)
+    state["index"] += 1
     load_question()
 def setup_test_screen():
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
@@ -229,3 +278,4 @@ def main(page: ft.Page):
     show_menu()
 
 ft.app(target=main)
+    
