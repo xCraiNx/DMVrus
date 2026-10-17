@@ -15,6 +15,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup exact Flutter version required by Flet
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.44.8'
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -29,8 +35,12 @@ jobs:
         run: |
           yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || echo "Licenses updated"
 
-      - name: Build Android APK
+      - name: Disable Flutter Analytics & Build APK
+        env:
+          FLET_CI: "true"
+          CI: "true"
         run: |
+          flutter config --no-analytics
           flet build apk
 
       - name: Upload APK Artifact
