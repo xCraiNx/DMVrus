@@ -1,4 +1,4 @@
-import flet as ft, os, json, random, time
+import flet as ft, os, json, random, time, threading
 try: from database import QUESTIONS_TEXT
 except ImportError: QUESTIONS_TEXT = "1;1;Тест;1;Ответ"
 
@@ -28,7 +28,7 @@ def save_json(p, data):
         with open(p, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
     except: pass
 
-settings = load_json(se_path, {"dark_theme": True, "exam_mode": False, "show_hints": True, "shuffle_options": True, "shuffle_questions": True, "sounds": True, "adaptive_colors": True, "theme_style": "classic"})
+settings = load_json(se_path, {"dark_theme": True, "exam_mode": False, "show_hints": True, "shuffle_options": True, "shuffle_questions": True, "sounds": True, "adaptive_colors": True, "theme_style": "classic", "auto_next": True})
 get_cur_color = lambda: THEME_PALETTES.get(settings.get("theme_style", "classic"), THEME_PALETTES["classic"])["primary"]
 get_sec_color = lambda s: SECTION_COLORS.get(str(s), get_cur_color()) if settings.get("adaptive_colors", True) else THEME_PALETTES.get(settings.get("theme_style", "classic"), THEME_PALETTES["classic"])["bg_btn"]
 get_all_wrong, get_all_notebook = lambda: load_json(wr_path, []), lambda: load_json(nb_path, [])
@@ -72,8 +72,9 @@ def show_settings_dialog():
     s_map["dark_theme"] = ft.Switch(label="Темная тема", value=settings["dark_theme"], on_change=lambda e: on_ch("dark_theme", e.control.value))
     s_map["exam_mode"] = ft.Switch(label="Режим экзамена", value=settings["exam_mode"], on_change=lambda e: on_ch("exam_mode", e.control.value))
     s_map["show_hints"] = ft.Switch(label="Показывать подсказки", value=settings["show_hints"], on_change=lambda e: on_ch("show_hints", e.control.value))
+    s_map["auto_next"] = ft.Switch(label="Автопереход (0.5 сек)", value=settings["auto_next"], on_change=lambda e: on_ch("auto_next", e.control.value))
     dd = ft.Dropdown(label="Палитра", value=settings["theme_style"], options=[ft.dropdown.Option(k, v) for k, v in [("classic", "Оранжевая"), ("premium", "Синяя"), ("eco", "Зеленая")]], on_change=lambda e: [settings.update({"theme_style": e.control.value}), save_json(se_path, settings), show_menu()])
-    page.open(ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], ft.Divider(), dd], scroll=ft.ScrollMode.AUTO, max_height=350)))
+    page.open(ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], s_map["auto_next"], ft.Divider(), dd], scroll=ft.ScrollMode.AUTO, max_height=380)))
 
 def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
     bc = get_cur_color() if is_sys else get_sec_color(sec_id); tl = title.lower()
@@ -162,8 +163,13 @@ def check_answer():
         elif is_s: c.bgcolor = ft.Colors.RED_900 if settings["dark_theme"] else ft.Colors.RED_100
     if is_all: state["score"] += 1; remove_wrong_q(q.get("текст вопроса", "")); result_text.value = "🎉 Правильно!"; result_text.color = ft.Colors.GREEN_400 if settings["dark_theme"] else ft.Colors.GREEN_600
     else: add_wrong_q(q); result_text.value = f"💡 Подсказка:\n• {q.get('подсказка', 'Разбор отсутствует.')}"; result_text.color = ft.Colors.RED_400 if settings["dark_theme"] else ft.Colors.RED_600
-    state["index"] += 1; btn_text = "➡️ Следующий вопрос" if state["index"] < len(state["current_df"]) else "🏁 Завершить тест"
-    confirm_btn.text, confirm_btn.visible = btn_text, True; confirm_btn.on_click = lambda e: load_question(); state["active_page"].update()
+    state["active_page"].update()
+    if is_all and settings["auto_next"] and not settings["exam_mode"]:
+        def auto_n(): time.sleep(0.5); state["index"] += 1; load_question()
+        threading.Thread(target=auto_n, daemon=True).start()
+    else:
+        state["index"] += 1; btn_text = "➡️ Следующий вопрос" if state["index"] < len(state["current_df"]) else "🏁 Завершить тест"
+        confirm_btn.text, confirm_btn.visible = btn_text, True; confirm_btn.on_click = lambda e: load_question(); state["active_page"].update()
 
 def setup_test_screen():
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
@@ -190,3 +196,5 @@ def main(page: ft.Page):
     show_menu()
 
 ft.app(target=main)
+
+
