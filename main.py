@@ -77,8 +77,8 @@ def show_settings_dialog():
     page.open(ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], s_map["auto_next"], ft.Divider(), dd], scroll=ft.ScrollMode.AUTO, max_height=380)))
 
 def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
-    bc = get_cur_color() if is_sys else get_sec_color(sec_id); tl = title.lower()
-    ct = "ПРОТИВОПОЖАРНЫЙ РЕЖИМ" if "противопожарного" in tl else ("ПЕРВАЯ ПОМОЩЬ" if "первой" in tl else ("ОХРАНА ТРУДА В ЭУ" if "охране труда" in tl else ("ПТЭ ЭЛЕКТРОУСТАНОВОК" if "технической" in tl else ("ПРАВИЛА УСТРОЙСТВА ЭУ" if "устройства" in tl else ("ПРАВИЛА ПЕРЕКЛЮЧЕНИЙ" if "переключений" in tl else ("РАБОТА С ПЕРСОНАЛОМ" if "персоналом" in tl else title.upper()))))))
+    bc = get_cur_color() if is_sys else get_sec_color(sec_id)
+    ct = title.upper() 
     return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(ct, size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, expand=True), ft.Container(content=ft.Text(str(count), size=11, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.Colors.WHITE, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(12))))
 
 def filter_search(e):
