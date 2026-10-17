@@ -51,7 +51,9 @@ def toggle_fav_or_nb(path_target, is_nb=False):
     save_json(path_target, items)
     if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"]:
         state["current_df"].pop(state["index"])
-        if state["index"] >= len(state["current_df"]) and state["index"] > 0: state["index"] -= 1
+        # Исправление IndexError: если удалили последний элемент, смещаем индекс назад
+        if state["index"] >= len(state["current_df"]): state["index"] = max(0, len(state["current_df"]) - 1)
+        if not state["current_df"]: show_menu(); return
     load_question()
 
 question_text, result_text, timer_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(size=14, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER), ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
@@ -81,8 +83,8 @@ def show_settings_dialog():
     page.open(ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], s_map["auto_next"], ft.Divider(), dd], scroll=ft.ScrollMode.AUTO, max_height=380)))
 
 def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
-    bc = get_cur_color() if is_sys else get_sec_color(sec_id); tl = title.lower()
-    ct = "ПРОТИВОПОЖАРНЫЙ РЕЖИМ" if "противопожарного" in tl else ("ПЕРВАЯ ПОМОЩЬ" if "первой" in tl else ("ОХРАНА ТРУДА В ЭУ" if "охране труда" in tl else ("ПТЭ ЭЛЕКТРОУСТАНОВОК" if "технической" in tl else ("ПРАВИЛА УСТРОЙСТВА ЭУ" if "устройства" in tl else ("ПРАВИЛА ПЕРЕКЛЮЧЕНИЙ" if "переключений" in tl else ("РАБОТА С ПЕРСОНАЛОМ" if "персоналом" in tl else title.upper()))))))
+    bc = get_cur_color() if is_sys else get_sec_color(sec_id)
+    ct = title.upper() 
     return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(ct, size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, expand=True), ft.Container(content=ft.Text(str(count), size=11, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.Colors.WHITE, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(12))))
 
 def filter_search(e):
@@ -90,6 +92,7 @@ def filter_search(e):
     if not v: show_menu(); return
     state["search_results"] = [q for q in questions_data if v in str(q.get("текст вопроса", "")).lower()]
     menu_items_column.controls.clear(); menu_items_column.controls.append(create_menu_card("🔍 Найдено совпадений", len(state["search_results"]), lambda e: start_test("SEARCH_RESULT"), True)); state["active_page"].update()
+
 def show_menu():
     if not state["active_page"]: return
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
@@ -146,12 +149,14 @@ def select_option(idx):
         if idx in state["selected_options_indices"]: state["selected_options_indices"].remove(idx)
         else: state["selected_options_indices"].append(idx)
         confirm_btn.visible = len(state["selected_options_indices"]) > 0
-        for i, c in enumerate(options_column.controls): c.bgcolor = (ft.Colors.ORANGE_900 if settings["dark_theme"] else ft.Colors.ORANGE_100) if i in state["selected_options_indices"] else (ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100)
+        for i, c in enumerate(options_column.controls): c.bgcolor = (ft.Colors.ORANGE_900 if settings["dark_theme"] else ft.Colors.ORANGE_100) if i in state["selected_options_indices"] else (ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100)
         state["active_page"].update()
-    else: state["selected_options_indices"] = [idx]; check_answer()
+    else: 
+        state["selected_options_indices"] = [idx]
+        state["answered_current"] = True
+        check_answer()
 
 def check_answer():
-    if state["answered_current"]: return
     state["answered_current"] = True; confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
     if state["is_multiple_choice"]:
         for i, o in enumerate(state["shuffled_options"]):
@@ -168,12 +173,11 @@ def check_answer():
     else: add_wrong_q(q); result_text.value = f"💡 Подсказка:\n• {q.get('подсказка', 'Разбор отсутствует.')}"; result_text.color = ft.Colors.RED_400 if settings["dark_theme"] else ft.Colors.RED_600
     state["active_page"].update()
     if is_all and settings["auto_next"] and not settings["exam_mode"]:
-        def auto_n(): 
+        async def auto_next_task():
             time.sleep(0.5)
             state["index"] += 1
-            state["answered_current"] = False 
             load_question()
-        threading.Thread(target=auto_n, daemon=True).start()
+        state["active_page"].run_task(auto_next_task)
     else:
         state["index"] += 1; btn_text = "➡️ Следующий вопрос" if state["index"] < len(state["current_df"]) else "🏁 Завершить тест"
         confirm_btn.text, confirm_btn.visible = btn_text, True; confirm_btn.on_click = lambda e: load_question(); state["active_page"].update()
