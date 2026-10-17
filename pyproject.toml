@@ -1,7 +1,7 @@
 [project]
 name = "flet_trainer_app"
 version = "1.0.0"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "flet==1.0.4"
 ]
@@ -13,3 +13,4 @@ org = "org.trainer"
 
 [tool.flet.android]
 abis = ["arm64-v8a"]
+python_version = "3.11"
