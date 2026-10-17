@@ -36,7 +36,6 @@ settings = load_json(se_path, {"dark_theme": True, "exam_mode": False, "show_hin
 get_cur_color = lambda: THEME_PALETTES.get(settings.get("theme_style", "classic"), THEME_PALETTES["classic"])["primary"]
 get_sec_color = lambda s: SECTION_COLORS.get(str(s), get_cur_color()) if settings.get("adaptive_colors", True) else THEME_PALETTES.get(settings.get("theme_style", "classic"), THEME_PALETTES["classic"])["bg_btn"]
 get_all_wrong, get_all_notebook = lambda: load_json(wr_path, []), lambda: load_json(nb_path, [])
-
 def add_wrong_q(q):
     w = get_all_wrong()
     if not any(x.get("текст вопроса") == q.get("текст вопроса") for x in w): w.append(q); save_json(wr_path, w)
@@ -83,9 +82,6 @@ async def async_load_question():
         else:
             state["index"] += 1
             load_question()
-    # Возвращаем статус на место для фонового потока автоперехода
-    state["answered_current"] = was_answered
-
 question_text, result_text, timer_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(size=14, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER), ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
 progress_bar, square_style = ft.ProgressBar(value=0.0, height=8, color=ft.Colors.ORANGE_700), ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
 back_to_menu_btn, confirm_btn = ft.FilledButton("📁 В меню", style=square_style), ft.FilledButton("✅ Подтвердить ответ", visible=False, style=square_style)
@@ -115,7 +111,6 @@ def show_settings_dialog():
     dd = ft.Dropdown(label="Палитра", value=settings["theme_style"], options=[ft.dropdown.Option(k, v) for k, v in [("classic", "Оранжевая"), ("premium", "Синяя"), ("eco", "Зеленая")]], on_change=lambda e: [settings.update({"theme_style": e.control.value}), save_json(se_path, settings), close_and_refresh(None)])
     dlg = ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], s_map["auto_next"], ft.Divider(), dd], scroll=ft.ScrollMode.AUTO, max_height=380))
     page.open(dlg)
-
 def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
     bc = get_cur_color() if is_sys else get_sec_color(sec_id)
     ct = title.upper() 
@@ -136,7 +131,6 @@ def show_menu():
     
     sections = {}
     for q in questions_data:
-        # ИСПРАВЛЕНО: Ключом теперь делаем ПОЛНОЕ оригинальное название раздела из базы данных
         full_sec_name = str(q.get("раздел", "1")).strip()
         sections[full_sec_name] = sections.get(full_sec_name, []) + [q]
 
@@ -145,41 +139,28 @@ def show_menu():
     r2 = ft.Row([ft.Container(create_menu_card("🟪 20 вопросов", 20, lambda e: start_test("RANDOM_20"), True), expand=True), ft.Container(create_menu_card("🟨 Избранные", len(load_json(fav_path, [])), lambda e: start_test("FAVORITES"), True), expand=True)], spacing=8)
     menu_items_column.controls.extend([r1, r2, ft.Container(height=5)])
     
-    # ИСПРАВЛЕНО: Сортируем по названиям разделов, чтобы они шли по порядку (1, 2, 3...)
     for s in sorted(sections.keys()):
         ql = sections[s]
         if ql:
-            # На кнопку выводится полное название раздела ql[0]["раздел"], и оно же передается в start_test(sec)
-            menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", s), len(ql), lambda e, sec=s: start_test(sec), sec_id=s))
+            menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", s), len(ql), lambda e, sec=s: start_test(sec), sec_id=s if "." in s else "1"))
     
     search_input.on_change = filter_search
     main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column])
     page.update()
 
-
 def start_test(sec_name):
     state.update({
-        "index": 0, 
-        "score": 0, 
-        "start_time": time.time(), 
-        "is_favorite_mode": sec_name == "FAVORITES", 
-        "is_review_mode": sec_name == "REVIEW", 
-        "is_notebook_mode": sec_name == "NOTEBOOK", 
-        "current_section_name": sec_name
+        "index": 0, "score": 0, "start_time": time.time(), 
+        "is_favorite_mode": sec_name == "FAVORITES", "is_review_mode": sec_name == "REVIEW", 
+        "is_notebook_mode": sec_name == "NOTEBOOK", "current_section_name": sec_name
     })
     
-    if sec_name == "REVIEW": 
-        state["current_df"] = get_all_wrong()
-    elif sec_name == "NOTEBOOK": 
-        state["current_df"] = get_all_notebook()
-    elif sec_name == "FAVORITES": 
-        state["current_df"] = load_json(fav_path, [])
-    elif sec_name == "SEARCH_RESULT": 
-        state["current_df"] = state["search_results"]
-    elif sec_name == "RANDOM_20": 
-        state["current_df"] = random.sample(questions_data, min(20, len(questions_data)))
-    else: 
-        state["current_df"] = [q for q in questions_data if str(q.get("раздел", "1")).strip() == str(sec_name).strip()]
+    if sec_name == "REVIEW": state["current_df"] = get_all_wrong()
+    elif sec_name == "NOTEBOOK": state["current_df"] = get_all_notebook()
+    elif sec_name == "FAVORITES": state["current_df"] = load_json(fav_path, [])
+    elif sec_name == "SEARCH_RESULT": state["current_df"] = state["search_results"]
+    elif sec_name == "RANDOM_20": state["current_df"] = random.sample(questions_data, min(20, len(questions_data)))
+    else: state["current_df"] = [q for q in questions_data if str(q.get("раздел", "1")).strip() == str(sec_name).strip()]
         
     if not state["current_df"]: 
         state["active_page"].open(ft.AlertDialog(title=ft.Text("📭 Пусто"), content=ft.Text("Нет вопросов.")))
@@ -200,7 +181,11 @@ def load_question():
     
     result_text.value, confirm_btn.visible = "", False
     progress_bar.value = state["index"] / len(state["current_df"])
-    progress_bar.color = get_sec_color(q.get("раздел", "1"))
+    
+    raw_sec = q.get("раздел", "1")
+    sec_color_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
+    progress_bar.color = get_sec_color(sec_color_id)
+    
     question_text.value = f"{q.get('текст вопроса', '')}"
     
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
@@ -214,13 +199,14 @@ def load_question():
     ro, ct = [x.strip() for x in q.get("варианты", "").split("|") if x.strip()], q.get("ответ", "").strip()
     state["is_multiple_choice"] = (ct.startswith("[") and ct.endswith("]")) or ("," in ct)
     
-    if state["is_multiple_choice"]:
-        clean_ct = ct.replace("[", "").replace("]", "")
-        cl = [x.strip() for x in clean_ct.split(",") if x.strip()]
-    else:
-        cl = [ct]
+    clean_ct = ct.replace("[", "").replace("]", "")
+    correct_indices = [x.strip() for x in clean_ct.split(",") if x.strip()]
         
-    state["shuffled_options"] = [{"text": o, "is_correct": o in cl or str(ri+1) == ct or (str(ri+1) in cl)} for ri, o in enumerate(ro)]
+    state["shuffled_options"] = []
+    for ri, o in enumerate(ro):
+        is_correct = (o in correct_indices) or (str(ri + 1) in correct_indices)
+        state["shuffled_options"].append({"text": o, "is_correct": is_correct})
+
     if settings["shuffle_options"]: 
         random.shuffle(state["shuffled_options"])
         
@@ -235,6 +221,7 @@ def load_question():
             on_click=lambda e, idx=i: select_option(idx)
         ))
     state["active_page"].update()
+
 def select_option(idx):
     if state["answered_current"]: return
     if state["is_multiple_choice"]:
@@ -294,26 +281,14 @@ def check_answer():
     if is_all and settings["auto_next"] and not settings["exam_mode"]:
         state["active_page"].run_task(async_load_question)
     else:
-        # ИСПРАВЛЕНО: Индекс ТУТ больше не увеличиваем заранее!
         btn_text = "➡️ Следующий вопрос" if (state["index"] + 1) < len(state["current_df"]) else "🏁 Завершить тест"
         confirm_btn.text, confirm_btn.visible = btn_text, True
-        # При клике сначала инкрементируем индекс, а затем загружаем вопрос
         confirm_btn.on_click = lambda e: next_question()
         state["active_page"].update()
 
 def next_question():
     state["index"] += 1
     load_question()
-
-async def async_load_question():
-    await asyncio.sleep(0.5)
-    # Проверяем, что страница жива, ответ дан и инкремент не выйдет за рамки массива
-    if state["answered_current"] and state["active_page"]:
-        if (state["index"] + 1) >= len(state["current_df"]):
-            finish_test()
-        else:
-            state["index"] += 1
-            load_question()
 
 def setup_test_screen():
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
@@ -335,14 +310,11 @@ def main(page: ft.Page):
         local_data = []
         for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
             if not line.strip() or line.startswith("Раздел;"): continue
-            
-            # ЖЕСТКАЯ ФИЛЬТРАЦИЯ: Если строка относится к 6 разделу, мы её просто пропускаем
             if line.startswith("6."): continue
             
             p = line.split(";")
             if len(p) >= 5: 
                 display_section = p[0].strip()
-                
                 local_data.append({
                     "раздел": display_section, 
                     "номер": p[1].strip(), 
@@ -353,5 +325,5 @@ def main(page: ft.Page):
                 })
         questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Ошибка загрузки базы данных", "ответ": "1", "варианты": "Ок", "подсказка": "Проверьте разделители."}]
     show_menu()
+
 ft.app(target=main)
-    
