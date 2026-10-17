@@ -190,7 +190,8 @@ def main(page: ft.Page):
             page.run_task(lambda: show_menu())
         back_to_menu_btn.on_click = lambda e: [clear_saved_progress(), show_menu()]
         fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click, confirm_btn.on_click = toggle_favorite, toggle_notebook, delete_current_from_notebook, check_answer
-        show_menu(); threading.Thread(target=async_parser, daemon=True).start()
+        show_menu()
+        threading.Thread(target=async_parser, daemon=True).start()
     except Exception as e:
         import traceback; page.controls.clear(); page.controls.append(ft.SafeArea(content=ft.Column([ft.Text("🚨 СБОЙ:", size=20, weight=ft.FontWeight.BOLD), ft.Container(content=ft.Text(traceback.format_exc(), size=12), bgcolor=ft.Colors.GREY_900, padding=10, expand=True)], scroll=ft.ScrollMode.AUTO))); page.update(); return
     def timer_loop():
@@ -201,4 +202,8 @@ def main(page: ft.Page):
                 try: timer_text.value = f"⏱️ Время: {m:02d}:{s:02d}"; page.update()
                 except: pass
     threading.Thread(target=timer_loop, daemon=True).start()
+
+    # ЖЕЛЕЗОБЕТОННАЯ ЗАГЛУШКА ДЛЯ УДЕРЖАНИЯ ANDROID UI ПОТОКА:
+    while state["app_running"]:
+        time.sleep(1)
 
