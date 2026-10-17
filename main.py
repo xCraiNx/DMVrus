@@ -93,14 +93,14 @@ def show_menu():
     tc = get_cur_color(); header = ft.Row([ft.Text("Тренажёр ОТ и ЭБ", size=24, weight=ft.FontWeight.BOLD, expand=True), ft.Row([ft.IconButton(icon=ft.Icons.BAR_CHART, icon_color=tc, on_click=lambda e: show_stats_dialog()), ft.IconButton(icon=ft.Icons.SETTINGS, icon_color=tc, on_click=lambda e: show_settings_dialog()), ft.IconButton(icon=ft.Icons.REFRESH, icon_color=tc, on_click=lambda e: [clear_saved_progress(), show_menu()])], spacing=0)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
     sections = {}
     for q in questions_data:
-        raw_sec = str(q.get("раздел", "1")).strip(); sec_id = raw_sec.split(".").strip() if "." in raw_sec else "1"
+        raw_sec = str(q.get("раздел", "1")).strip(); sec_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
         sections[sec_id] = sections.get(sec_id, []) + [q]
     menu_items_column.controls.clear()
     r1 = ft.Row([ft.Container(create_menu_card("🟥 Ошибки", len(get_all_wrong()), lambda e: start_test("REVIEW"), True), expand=True), ft.Container(create_menu_card("🟦 Конспект", len(get_all_notebook()), lambda e: start_test("NOTEBOOK"), True), expand=True)], spacing=8)
     r2 = ft.Row([ft.Container(create_menu_card("🟪 20 вопросов", 20, lambda e: start_test("RANDOM_20"), True), expand=True), ft.Container(create_menu_card("🟨 Избранные", len(load_json(fav_path, [])), lambda e: start_test("FAVORITES"), True), expand=True)], spacing=8)
     menu_items_column.controls.extend([r1, r2, ft.Container(height=10)])
     for s in sorted(sections.keys(), key=lambda x: int(x) if x.isdigit() else 999):
-        ql = sections[s]; menu_items_column.controls.append(create_menu_card(ql.get("раздел", f"Раздел {s}") if ql else f"Раздел {s}", len(ql), lambda e, sec=s: start_test(sec), sec_id=s))
+        ql = sections[s]; menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", f"Раздел {s}") if ql else f"Раздел {s}", len(ql), lambda e, sec=s: start_test(sec), sec_id=s))
     search_input.on_change = filter_search; page.add(header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column); page.update()
 def start_test(sec_name):
     state.update({"index": 0, "score": 0, "start_time": time.time(), "is_favorite_mode": sec_name=="FAVORITES", "is_review_mode": sec_name=="REVIEW", "is_notebook_mode": sec_name=="NOTEBOOK", "is_search_test_mode": sec_name=="SEARCH_RESULT", "current_section_name": sec_name, "app_running": True})
