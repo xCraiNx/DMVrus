@@ -89,6 +89,7 @@ def filter_search(e):
     state["search_results"] = [q for q in questions_data if v in str(q.get("текст вопроса", "")).lower()]
     menu_items_column.controls.clear(); menu_items_column.controls.append(create_menu_card("🔍 Найдено совпадений", len(state["search_results"]), lambda e: start_test("SEARCH_RESULT"), True)); state["active_page"].update()
 def show_menu():
+    if not state["active_page"]: return
     page = state["active_page"]; page.controls.clear(); page.scroll = ft.ScrollMode.AUTO; state.update({"is_favorite_mode": False, "is_review_mode": False, "is_notebook_mode": False, "is_search_test_mode": False, "current_section_name": "", "current_df": []})
     tc = get_cur_color(); header = ft.Row([ft.Text("Тренажёр ОТ и ЭБ", size=24, weight=ft.FontWeight.BOLD, expand=True), ft.Row([ft.IconButton(icon=ft.Icons.BAR_CHART, icon_color=tc, on_click=lambda e: show_stats_dialog()), ft.IconButton(icon=ft.Icons.SETTINGS, icon_color=tc, on_click=lambda e: show_settings_dialog()), ft.IconButton(icon=ft.Icons.REFRESH, icon_color=tc, on_click=lambda e: [clear_saved_progress(), show_menu()])], spacing=0)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
     sections = {}
@@ -200,4 +201,3 @@ def main(page: ft.Page):
                 try: timer_text.value = f"⏱️ Время: {m:02d}:{s:02d}"; page.update()
                 except: pass
     threading.Thread(target=timer_loop, daemon=True).start()
-
