@@ -48,7 +48,11 @@ def toggle_fav_or_nb(path_target, is_nb=False):
     idx = next((i for i, x in enumerate(items) if x.get("текст вопроса") == q.get("текст вопроса")), None)
     if idx is not None: items.pop(idx)
     else: items.append(q)
-    save_json(path_target, items); load_question()
+    save_json(path_target, items)
+    if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"]:
+        state["current_df"].pop(state["index"])
+        if state["index"] >= len(state["current_df"]) and state["index"] > 0: state["index"] -= 1
+    load_question()
 
 question_text, result_text, timer_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(size=14, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER), ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
 progress_bar, square_style = ft.ProgressBar(value=0.0, height=8, color=ft.Colors.ORANGE_700), ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
@@ -77,8 +81,8 @@ def show_settings_dialog():
     page.open(ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], s_map["auto_next"], ft.Divider(), dd], scroll=ft.ScrollMode.AUTO, max_height=380)))
 
 def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
-    bc = get_cur_color() if is_sys else get_sec_color(sec_id)
-    ct = title.upper() 
+    bc = get_cur_color() if is_sys else get_sec_color(sec_id); tl = title.lower()
+    ct = "ПРОТИВОПОЖАРНЫЙ РЕЖИМ" if "противопожарного" in tl else ("ПЕРВАЯ ПОМОЩЬ" if "первой" in tl else ("ОХРАНА ТРУДА В ЭУ" if "охране труда" in tl else ("ПТЭ ЭЛЕКТРОУСТАНОВОК" if "технической" in tl else ("ПРАВИЛА УСТРОЙСТВА ЭУ" if "устройства" in tl else ("ПРАВИЛА ПЕРЕКЛЮЧЕНИЙ" if "переключений" in tl else ("РАБОТА С ПЕРСОНАЛОМ" if "персоналом" in tl else title.upper()))))))
     return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(ct, size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, expand=True), ft.Container(content=ft.Text(str(count), size=11, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.Colors.WHITE, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(12))))
 
 def filter_search(e):
@@ -86,7 +90,6 @@ def filter_search(e):
     if not v: show_menu(); return
     state["search_results"] = [q for q in questions_data if v in str(q.get("текст вопроса", "")).lower()]
     menu_items_column.controls.clear(); menu_items_column.controls.append(create_menu_card("🔍 Найдено совпадений", len(state["search_results"]), lambda e: start_test("SEARCH_RESULT"), True)); state["active_page"].update()
-
 def show_menu():
     if not state["active_page"]: return
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
@@ -99,7 +102,7 @@ def show_menu():
         sec_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
         sections[sec_id] = sections.get(sec_id, []) + [q]
     menu_items_column.controls.clear()
-    r1 = ft.Row([ft.Container(create_menu_card("🟥 Ошибки", len(get_all_wrong()), lambda e: start_test("REVIEW"), True), expand=True), ft.Container(create_menu_card("🟦badge Конспект", len(get_all_notebook()), lambda e: start_test("NOTEBOOK"), True), expand=True)], spacing=8)
+    r1 = ft.Row([ft.Container(create_menu_card("🟥 Ошибки", len(get_all_wrong()), lambda e: start_test("REVIEW"), True), expand=True), ft.Container(create_menu_card("🟦 Конспект", len(get_all_notebook()), lambda e: start_test("NOTEBOOK"), True), expand=True)], spacing=8)
     r2 = ft.Row([ft.Container(create_menu_card("🟪 20 вопросов", 20, lambda e: start_test("RANDOM_20"), True), expand=True), ft.Container(create_menu_card("🟨 Избранные", len(load_json(fav_path, [])), lambda e: start_test("FAVORITES"), True), expand=True)], spacing=8)
     menu_items_column.controls.extend([r1, r2, ft.Container(height=5)])
     for s in sorted(sections.keys(), key=lambda x: int(x) if x.isdigit() else 999):
@@ -165,7 +168,11 @@ def check_answer():
     else: add_wrong_q(q); result_text.value = f"💡 Подсказка:\n• {q.get('подсказка', 'Разбор отсутствует.')}"; result_text.color = ft.Colors.RED_400 if settings["dark_theme"] else ft.Colors.RED_600
     state["active_page"].update()
     if is_all and settings["auto_next"] and not settings["exam_mode"]:
-        def auto_n(): time.sleep(0.5); state["index"] += 1; load_question()
+        def auto_n(): 
+            time.sleep(0.5)
+            state["index"] += 1
+            state["answered_current"] = False 
+            load_question()
         threading.Thread(target=auto_n, daemon=True).start()
     else:
         state["index"] += 1; btn_text = "➡️ Следующий вопрос" if state["index"] < len(state["current_df"]) else "🏁 Завершить тест"
@@ -173,7 +180,7 @@ def check_answer():
 
 def setup_test_screen():
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
-    mr = ft.Row([ft.Text(f"Вопрос {state['index'] + 1} из {len(state['current_df'])}", size=14, weight=ft.FontWeight.BOLD), ft.Row([fav_btn, notebook_btn, del_nb_btn] if state["is_notebook_mode"] else [fav_btn, notebook_btn], spacing=0)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+    mr = ft.Row([ft.Text(f"Вопрос {state['index'] + 1} из {len(state['current_df'])}", size=14, weight=ft.FontWeight.BOLD), ft.Row([fav_btn, notebook_btn, del_nb_btn] if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"] else [fav_btn, notebook_btn], spacing=0)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
     main_layout.controls.extend([ft.Row([back_to_menu_btn, timer_text], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), progress_bar, mr, question_text, ft.Row([ft.Container(content=result_text, padding=ft.padding.only(top=5, bottom=5))], alignment=ft.MainAxisAlignment.CENTER), options_column, confirm_btn]); page.update()
 
 def finish_test():
@@ -185,7 +192,7 @@ def main(page: ft.Page):
     global questions_data; state["active_page"] = page; page.theme_mode = ft.ThemeMode.DARK if settings["dark_theme"] else ft.ThemeMode.LIGHT
     page.controls.clear(); page.add(ft.SafeArea(content=main_layout))
     back_to_menu_btn.on_click = lambda e: show_menu()
-    fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click = lambda e: toggle_fav_or_nb(fav_path), lambda e: toggle_fav_or_nb(nb_path), lambda e: delete_current_from_notebook(e)
+    fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click = lambda e: toggle_fav_or_nb(fav_path), lambda e: toggle_fav_or_nb(nb_path), lambda e: toggle_fav_or_nb(nb_path)
     if not questions_data:
         local_data = []
         for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
@@ -196,5 +203,3 @@ def main(page: ft.Page):
     show_menu()
 
 ft.app(target=main)
-
-
