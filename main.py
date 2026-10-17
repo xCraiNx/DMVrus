@@ -82,7 +82,10 @@ async def async_load_question():
         else:
             state["index"] += 1
             load_question()
-question_text, result_text, timer_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(size=14, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER), ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
+
+question_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER, soft_wrap=True)
+result_text = ft.Text(size=14, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER, soft_wrap=True)
+timer_text = ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
 progress_bar, square_style = ft.ProgressBar(value=0.0, height=8, color=ft.Colors.ORANGE_700), ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
 back_to_menu_btn, confirm_btn = ft.FilledButton("📁 В меню", style=square_style), ft.FilledButton("✅ Подтвердить ответ", visible=False, style=square_style)
 fav_btn, notebook_btn, del_nb_btn = ft.IconButton(icon=ft.Icons.STAR_OUTLINED, icon_size=26), ft.IconButton(icon=ft.Icons.BOOKMARK_OUTLINED, icon_size=26), ft.IconButton(icon=ft.Icons.DELETE_OUTLINED, icon_size=26, icon_color=ft.Colors.RED_400)
