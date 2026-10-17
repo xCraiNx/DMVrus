@@ -55,15 +55,33 @@ def toggle_fav_or_nb(path_target, is_nb=False):
     else: items.append(q)
     save_json(path_target, items)
     
-    # Сохраняем текущий статус, чтобы load_question его не затерла
-    was_answered = state["answered_current"]
-    
     if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"]:
         state["current_df"].pop(state["index"])
         if state["index"] >= len(state["current_df"]): state["index"] = max(0, len(state["current_df"]) - 1)
         if not state["current_df"]: show_menu(); return
-        
-    load_question()
+
+    # ИСПРАВЛЕНО: Вместо тяжелого load_question() просто меняем иконку активной кнопки,
+    # не сбрасывая состояние ответов и не ломая рендеринг вариантов.
+    is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
+    fav_btn.icon = ft.Icons.STAR if is_f else ft.Icons.STAR_OUTLINED
+    fav_btn.icon_color = ft.Colors.AMBER_500 if is_f else (ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
+    
+    is_n = any(x.get("текст вопроса") == q.get("текст вопроса") for x in get_all_notebook())
+    notebook_btn.icon = ft.Icons.BOOKMARK if is_n else ft.Icons.BOOKMARK_OUTLINED
+    notebook_btn.icon_color = ft.Colors.BLUE_500 if is_n else (ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
+    state["active_page"].update()
+
+async def async_load_question():
+    await asyncio.sleep(0.5)
+    # ИСПРАВЛЕНО: Строго прерываем функцию через return при финише
+    if state["answered_current"] and state["active_page"]:
+        if (state["index"] + 1) >= len(state["current_df"]):
+            finish_test()
+            return
+        else:
+            state["index"] += 1
+            load_question()
+
     # Возвращаем статус на место для фонового потока автоперехода
     state["answered_current"] = was_answered
 
