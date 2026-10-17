@@ -12,8 +12,9 @@ questions_data, state = [], {
     "shuffled_options": [], "search_results": [], "is_multiple_choice": False
 }
 
-data_dir = os.path.join(os.path.expanduser("~"), ".flet_trainer_cache_v2")
+data_dir = os.environ.get("FLET_APP_STORAGE_DATA_DIR", os.path.dirname(__file__))
 os.makedirs(data_dir, exist_ok=True)
+
 fav_path, nb_path, wr_path, st_path, se_path = [os.path.join(data_dir, f) for f in ["fv.json", "nb.json", "wr.json", "st.json", "se.json"]]
 
 SECTION_COLORS = {"1": ft.Colors.ORANGE_800, "2": ft.Colors.BLUE_800, "3": ft.Colors.GREEN_800, "4": ft.Colors.TEAL_800, "5": ft.Colors.RED_800, "6": ft.Colors.DEEP_ORANGE_800, "7": ft.Colors.INDIGO_800, "8": ft.Colors.PURPLE_800, "9": ft.Colors.CYAN_800}
@@ -109,6 +110,7 @@ def show_menu():
     sections = {}
     for q in questions_data:
         raw_sec = str(q.get("раздел", "1")).strip()
+        # ИСПРАВЛЕНО: сначала берем первый элемент из списка по индексу, а затем очищаем пробелы
         sec_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
         sections[sec_id] = sections.get(sec_id, []) + [q]
 
