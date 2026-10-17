@@ -105,7 +105,8 @@ def show_menu():
     r2 = ft.Row([ft.Container(create_menu_card("🟪 20 вопросов", 20, lambda e: start_test("RANDOM_20"), True), expand=True), ft.Container(create_menu_card("🟨 Избранные", len(load_json(fav_path, [])), lambda e: start_test("FAVORITES"), True), expand=True)], spacing=8)
     menu_items_column.controls.extend([r1, r2, ft.Container(height=10)])
     for s in sorted(sections.keys(), key=lambda x: int(x) if x.isdigit() else 999):
-        ql = sections[s]; sec_title = ql[0].get("раздел", f"Раздел {s}") if ql else f"Раздел {s}"
+        ql = sections[s]
+        sec_title = ql[0].get("раздел", f"Раздел {s}") if (ql and len(ql) > 0) else f"Раздел {s}"
         menu_items_column.controls.append(create_menu_card(sec_title, len(ql), lambda e, sec=s: start_test(sec), sec_id=s))
     search_input.on_change = filter_search; page.add(header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column); page.update()
 def start_test(sec_name):
