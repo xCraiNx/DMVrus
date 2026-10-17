@@ -109,9 +109,9 @@ def show_menu():
     sections = {}
     for q in questions_data:
         raw_sec = str(q.get("раздел", "1")).strip()
-        # ИСПРАВЛЕНО: берем первый элемент строки ДО точки и очищаем его от пробелов
         sec_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
         sections[sec_id] = sections.get(sec_id, []) + [q]
+
     menu_items_column.controls.clear()
     r1 = ft.Row([ft.Container(create_menu_card("🟥 Ошибки", len(get_all_wrong()), lambda e: start_test("REVIEW"), True), expand=True), ft.Container(create_menu_card("🟦 Конспект", len(get_all_notebook()), lambda e: start_test("NOTEBOOK"), True), expand=True)], spacing=8)
     r2 = ft.Row([ft.Container(create_menu_card("🟪 20 вопросов", 20, lambda e: start_test("RANDOM_20"), True), expand=True), ft.Container(create_menu_card("🟨 Избранные", len(load_json(fav_path, [])), lambda e: start_test("FAVORITES"), True), expand=True)], spacing=8)
