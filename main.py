@@ -201,18 +201,4 @@ def main(page: ft.Page):
                 except: pass
     threading.Thread(target=timer_loop, daemon=True).start()
 if __name__ == "__main__":
-    try:
-        import flet.fastapi as flet_fastapi
-        ft.run_app(main)
-    except:
-        try:
-            ft.app(target=main)
-        except:
-            try:
-                ft.run_app(target=main)
-            except:
-                # Финальный метод для внутренней сборки Flet 1.x на Android
-                ft.main(main)
-
-
-
+    ft.app(target=main)
