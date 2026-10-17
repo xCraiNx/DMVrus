@@ -1,6 +1,7 @@
 [project]
 name = "flet_trainer_app"
 version = "1.0.0"
+requires-python = ">=3.10"
 dependencies = [
     "flet==1.0.4"
 ]
