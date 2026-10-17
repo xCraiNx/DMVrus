@@ -55,15 +55,16 @@ def toggle_fav_or_nb(path_target, is_nb=False):
     else: items.append(q)
     save_json(path_target, items)
     
-    # Если мы находимся внутри самих разделов Избранного или Конспекта, удаление требует pop() из массива
     if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"]:
         state["current_df"].pop(state["index"])
-        if state["index"] >= len(state["current_df"]): state["index"] = max(0, len(state["current_df"]) - 1)
-        if not state["current_df"]: show_menu(); return
+        if not state["current_df"]: 
+            show_menu()
+            return
+        if state["index"] >= len(state["current_df"]): 
+            state["index"] = len(state["current_df"]) - 1
         load_question()
         return
-        
-    # ИСПРАВЛЕНО: Для обычных тестов точечно меняем только визуальные иконки, не затирая флаги ответов
+
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
     fav_btn.icon = ft.Icons.STAR if is_f else ft.Icons.STAR_OUTLINED
     fav_btn.icon_color = ft.Colors.AMBER_500 if is_f else (ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
@@ -73,10 +74,8 @@ def toggle_fav_or_nb(path_target, is_nb=False):
     notebook_btn.icon_color = ft.Colors.BLUE_500 if is_n else (ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
     state["active_page"].update()
 
-
 async def async_load_question():
     await asyncio.sleep(0.5)
-    # ИСПРАВЛЕНО: Добавлен обязательный return для жесткого прерывания корутины при финише
     if state["answered_current"] and state["active_page"]:
         if (state["index"] + 1) >= len(state["current_df"]):
             finish_test()
