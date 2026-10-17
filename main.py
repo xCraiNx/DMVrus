@@ -109,6 +109,7 @@ def show_menu():
     sections = {}
     for q in questions_data:
         raw_sec = str(q.get("раздел", "1")).strip()
+        # ИСПРАВЛЕНО: берем первый элемент списка после сплита и очищаем его от пробелов
         sec_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
         sections[sec_id] = sections.get(sec_id, []) + [q]
     menu_items_column.controls.clear()
@@ -271,10 +272,10 @@ def check_answer():
         state["active_page"].update()
 
 async def async_load_question():
-    import asyncio
     await asyncio.sleep(0.5)
     state["index"] += 1
     load_question()
+
 def setup_test_screen():
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
     mr = ft.Row([ft.Text(f"Вопрос {state['index'] + 1} из {len(state['current_df'])}", size=14, weight=ft.FontWeight.BOLD), ft.Row([fav_btn, notebook_btn, del_nb_btn] if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"] else [fav_btn, notebook_btn], spacing=0)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
