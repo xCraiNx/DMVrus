@@ -75,6 +75,7 @@ def toggle_fav_or_nb(path_target, is_nb=False):
 
 async def async_load_question():
     await asyncio.sleep(0.5)
+    # Проверяем, что страница жива, ответ дан и инкремент не выйдет за рамки массива
     if state["answered_current"] and state["active_page"]:
         if (state["index"] + 1) >= len(state["current_df"]):
             finish_test()
@@ -82,6 +83,7 @@ async def async_load_question():
         else:
             state["index"] += 1
             load_question()
+
 
 question_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER, soft_wrap=True)
 result_text = ft.Text(size=14, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER, soft_wrap=True)
