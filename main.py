@@ -144,7 +144,7 @@ def load_question():
     q = state["current_df"][state["index"]]; state.update({"answered_current": False, "selected_options_indices": []})
     result_text.value, confirm_btn.visible = "", False; progress_bar.value = state["index"] / len(state["current_df"])
     
-    # ИСПРАВЛЕНИЕ: Безопасное извлечение индекса [0] перед очисткой строки
+    # Безопасное извлечение индекса перед очисткой строки
     raw_sec = q.get("раздел", "1")
     sec_color_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
     progress_bar.color = get_sec_color(sec_color_id)
@@ -175,8 +175,9 @@ def select_option(idx):
         state["active_page"].update()
     else: 
         state["selected_options_indices"] = [idx]
-        state["answered_current"] = True
+        state["answered_current"] = True  # Мгновенно блокируем повторные тапы
         check_answer()
+
 
 def check_answer():
     confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
