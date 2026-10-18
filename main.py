@@ -179,18 +179,16 @@ def select_option(idx):
         check_answer()
 
 def check_answer():
-    state["answered_current"] = True; confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
+    confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
     if state["is_multiple_choice"]:
-        if not state["selected_options_indices"]: is_all = False
-        else:
-            for i, o in enumerate(state["shuffled_options"]):
-                if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
+        for i, o in enumerate(state["shuffled_options"]):
+            if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
     else:
-        # ИСПРАВЛЕНИЕ ТИПОВ: Извлекаем первый элемент списка безопасно
         if not state["selected_options_indices"]: is_all = False
         else:
             sel_idx = state["selected_options_indices"][0]
             is_all = state["shuffled_options"][sel_idx]["is_correct"]
+
             
     trigger_vibration(success=is_all)
     for i, c in enumerate(options_column.controls):
