@@ -17,18 +17,14 @@ THEME_PALETTES = {"classic": {"primary": ft.Colors.ORANGE_700, "bg_btn": ft.Colo
 def load_json(p, d):
     if os.path.exists(p):
         try:
-            with open(p, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Ошибка при загрузке {p}: {e}")  # Вывод ошибки  
+            with open(p, "r", encoding="utf-8") as f: return json.load(f)
+        except: pass
     return d
 
 def save_json(p, data):
     try:
-        with open(p, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-    except Exception as e:
-        print(f"Ошибка при сохранении {p}: {e}")  # Вывод ошибки
+        with open(p, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
+    except: pass
 
 settings = load_json(se_path, {"dark_theme": True, "exam_mode": False, "show_hints": True, "shuffle_options": True, "shuffle_questions": True, "sounds": True, "adaptive_colors": True, "theme_style": "classic", "auto_next": True})
 get_cur_color = lambda: THEME_PALETTES.get(settings.get("theme_style", "classic"), THEME_PALETTES["classic"])["primary"]
@@ -143,13 +139,10 @@ def load_question():
     if state["index"] >= len(state["current_df"]): finish_test(); return
     q = state["current_df"][state["index"]]; state.update({"answered_current": False, "selected_options_indices": []})
     result_text.value, confirm_btn.visible = "", False; progress_bar.value = state["index"] / len(state["current_df"])
-    
-    # Безопасное извлечение индекса перед очисткой строки
     raw_sec = q.get("раздел", "1")
     sec_color_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
     progress_bar.color = get_sec_color(sec_color_id)
     question_text.value = f"{q.get('текст вопроса', '')}"
-    
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
     fav_btn.icon, fav_btn.icon_color = (ft.Icons.STAR, ft.Colors.AMBER_500) if is_f else (ft.Icons.STAR_OUTLINED, ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
     is_n = any(x.get("текст вопроса") == q.get("текст вопроса") for x in get_all_notebook())
@@ -164,7 +157,6 @@ def load_question():
     for i, opt in enumerate(state["shuffled_options"]):
         options_column.controls.append(ft.Container(content=ft.Text(opt["text"], size=14, color=ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK), padding=ft.padding.all(12), border=ft.border.all(1, ft.Colors.GREY_700 if settings["dark_theme"] else ft.Colors.GREY_400), border_radius=10, bgcolor=ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100, on_click=lambda e, idx=i: select_option(idx)))
     state["active_page"].update()
-
 def select_option(idx):
     if state["answered_current"]: return
     if state["is_multiple_choice"]:
@@ -175,22 +167,22 @@ def select_option(idx):
         state["active_page"].update()
     else: 
         state["selected_options_indices"] = [idx]
-        state["answered_current"] = True  # Блокируем клики мгновенно перед анимацией
+        state["answered_current"] = True
         check_answer()
 
 def check_answer():
-    confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
+    state["answered_current"] = True; confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
     if state["is_multiple_choice"]:
-        for i, o in enumerate(state["shuffled_options"]):
-            if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
+        if not state["selected_options_indices"]: is_all = False
+        else:
+            for i, o in enumerate(state["shuffled_options"]):
+                if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
     else:
-        # ИСПРАВЛЕНИЕ ТИПОВ: Берем нулевой элемент списка, чтобы получить чистое число (int)
+        # ИСПРАВЛЕНИЕ ТИПОВ: Извлекаем именно число (int), а не передаем весь список в индекс
         if not state["selected_options_indices"]: is_all = False
         else:
             sel_idx = state["selected_options_indices"][0]
             is_all = state["shuffled_options"][sel_idx]["is_correct"]
-
-
             
     trigger_vibration(success=is_all)
     for i, c in enumerate(options_column.controls):
@@ -223,31 +215,20 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK if settings["dark_theme"] else ft.ThemeMode.LIGHT  
     page.controls.clear()
     page.add(ft.SafeArea(content=main_layout))
-    
-    # Добавьте отладочный вывод  
     print("Запуск приложения...")
-
-    # Ваши кнопки и функции...
+    fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click = lambda e: toggle_fav_or_nb(fav_path), lambda e: toggle_fav_or_nb(nb_path), lambda e: toggle_fav_or_nb(nb_path)
     
     if not questions_data:
         local_data = []
         for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
-            if not line.strip() or line.startswith("Раздел;"):
-                continue  
+            if not line.strip() or line.startswith("Раздел;"): continue  
             p = line.split(";")
             if len(p) >= 5:
                 local_data.append({
-                    "раздел": p[0].strip(),
-                    "номер": p[1].strip(),
-                    "текст вопроса": p[2].strip(),
-                    "ответ": p[3].strip(),
-                    "варианты": p[4].strip(),
+                    "раздел": p[0].strip(), "номер": p[1].strip(), "текст вопроса": p[2].strip(),
+                    "ответ": p[3].strip(), "варианты": p[4].strip(),
                     "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."
                 })
-        
-        # Вывод отладочной информации о загруженных вопросах  
         print(f"Загружено вопросов: {len(local_data)}")
-        
         questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор"}]
-
     show_menu()
