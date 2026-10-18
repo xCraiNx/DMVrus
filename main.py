@@ -165,8 +165,6 @@ def load_question():
         options_column.controls.append(ft.Container(content=ft.Text(opt["text"], size=14, color=ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK), padding=ft.padding.all(12), border=ft.border.all(1, ft.Colors.GREY_700 if settings["dark_theme"] else ft.Colors.GREY_400), border_radius=10, bgcolor=ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100, on_click=lambda e, idx=i: select_option(idx)))
     state["active_page"].update()
 
-    else: state["selected_options_indices"] = [idx]; check_answer()
-
 def select_option(idx):
     if state["answered_current"]: return
     if state["is_multiple_choice"]:
@@ -177,7 +175,7 @@ def select_option(idx):
         state["active_page"].update()
     else: 
         state["selected_options_indices"] = [idx]
-        state["answered_current"] = True # Мгновенно блокируем повторные тапы
+        state["answered_current"] = True
         check_answer()
 
 def check_answer():
@@ -186,7 +184,6 @@ def check_answer():
         for i, o in enumerate(state["shuffled_options"]):
             if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
     else:
-        # ИСПРАВЛЕНИЕ: Безопасное извлечение выбранного индекса через итератор
         if not state["selected_options_indices"]: is_all = False
         else:
             sel_idx = state["selected_options_indices"][0]
