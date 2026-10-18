@@ -143,8 +143,13 @@ def load_question():
     if state["index"] >= len(state["current_df"]): finish_test(); return
     q = state["current_df"][state["index"]]; state.update({"answered_current": False, "selected_options_indices": []})
     result_text.value, confirm_btn.visible = "", False; progress_bar.value = state["index"] / len(state["current_df"])
-    raw_sec = q.get("раздел", "1"); sec_color_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
-    progress_bar.color = get_sec_color(sec_color_id); question_text.value = f"{q.get('текст вопроса', '')}"
+    
+    # ИСПРАВЛЕНИЕ: Безопасное приведение к строке, лямбда get_sec_color сама подставит дефолтный цвет, если ключа нет
+    raw_sec = q.get("раздел", "1")
+    sec_color_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
+    progress_bar.color = get_sec_color(sec_color_id)
+    question_text.value = f"{q.get('текст вопроса', '')}"
+    
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
     fav_btn.icon, fav_btn.icon_color = (ft.Icons.STAR, ft.Colors.AMBER_500) if is_f else (ft.Icons.STAR_OUTLINED, ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
     is_n = any(x.get("текст вопроса") == q.get("текст вопроса") for x in get_all_notebook())
@@ -159,6 +164,9 @@ def load_question():
     for i, opt in enumerate(state["shuffled_options"]):
         options_column.controls.append(ft.Container(content=ft.Text(opt["text"], size=14, color=ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK), padding=ft.padding.all(12), border=ft.border.all(1, ft.Colors.GREY_700 if settings["dark_theme"] else ft.Colors.GREY_400), border_radius=10, bgcolor=ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100, on_click=lambda e, idx=i: select_option(idx)))
     state["active_page"].update()
+
+    else: state["selected_options_indices"] = [idx]; check_answer()
+
 def select_option(idx):
     if state["answered_current"]: return
     if state["is_multiple_choice"]:
@@ -167,16 +175,23 @@ def select_option(idx):
         confirm_btn.visible = len(state["selected_options_indices"]) > 0
         for i, c in enumerate(options_column.controls): c.bgcolor = (ft.Colors.ORANGE_900 if settings["dark_theme"] else ft.Colors.ORANGE_100) if i in state["selected_options_indices"] else (ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100)
         state["active_page"].update()
-    else: state["selected_options_indices"] = [idx]; check_answer()
+    else: 
+        state["selected_options_indices"] = [idx]
+        state["answered_current"] = True # Мгновенно блокируем повторные тапы
+        check_answer()
 
 def check_answer():
-    state["answered_current"] = True; confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
+    confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
     if state["is_multiple_choice"]:
         for i, o in enumerate(state["shuffled_options"]):
             if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
     else:
+        # ИСПРАВЛЕНИЕ: Безопасное извлечение выбранного индекса через итератор
         if not state["selected_options_indices"]: is_all = False
-        else: is_all = state["shuffled_options"][state["selected_options_indices"][0]]["is_correct"]
+        else:
+            sel_idx = state["selected_options_indices"][0]
+            is_all = state["shuffled_options"][sel_idx]["is_correct"]
+            
     trigger_vibration(success=is_all)
     for i, c in enumerate(options_column.controls):
         o = state["shuffled_options"][i]; is_s = i in state["selected_options_indices"]
@@ -190,6 +205,7 @@ def check_answer():
     else:
         btn_text = "➡️ Следующий вопрос" if (state["index"] + 1) < len(state["current_df"]) else "🏁 Завершить тест"
         confirm_btn.text, confirm_btn.visible = btn_text, True; confirm_btn.on_click = lambda e: next_question(); state["active_page"].update()
+
 
 def next_question(): state["index"] += 1; load_question()
 def setup_test_screen():
