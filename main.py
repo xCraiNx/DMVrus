@@ -184,10 +184,12 @@ def check_answer():
         for i, o in enumerate(state["shuffled_options"]):
             if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
     else:
+        # ИСПРАВЛЕНИЕ ТИПОВ: Берем нулевой элемент списка, чтобы получить чистое число (int)
         if not state["selected_options_indices"]: is_all = False
         else:
             sel_idx = state["selected_options_indices"][0]
             is_all = state["shuffled_options"][sel_idx]["is_correct"]
+
 
             
     trigger_vibration(success=is_all)
