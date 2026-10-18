@@ -231,5 +231,7 @@ def main(page: ft.Page):
         print(f"Загружено вопросов: {len(local_data)}")
         questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианны": "Ответ|Вариант 2", "подсказка": "Разбор"}]
     show_menu()
+if __name__ == "__main__":
+    ft.app(target=main)    
     
 
