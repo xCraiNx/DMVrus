@@ -300,22 +300,16 @@ def finish_test():
 
 def main(page: ft.Page):
     global questions_data; state["active_page"] = page; page.theme_mode = ft.ThemeMode.DARK if settings["dark_theme"] else ft.ThemeMode.LIGHT
-    page.controls.clear(); page.add(ft.SafeArea(content=main_layout)); back_to_menu_btn.on_click = lambda e: show_menu()
+    page.controls.clear(); page.add(ft.SafeArea(content=main_layout())); back_to_menu_btn.on_click = lambda e: show_menu()
     fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click = lambda e: toggle_fav_or_nb(fav_path), lambda e: toggle_fav_or_nb(nb_path), lambda e: toggle_fav_or_nb(nb_path)
     if not questions_data:
         local_data = []
         for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
             if not line.strip() or line.startswith("Раздел;"): continue
             p = line.split(";")
-            if len(p) >= 5:
-    local_data.append({
-    "раздел": p[0].strip(),
-    "номер": p[1].strip(),
-    "текст вопроса": p[2].strip(),
-    "ответ": p[3].strip(),
-    "варианты": p[4].strip(),
-    "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."
-})
-            questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор"}]
+            if len(p) >= 5: local_data.append({"раздел": p[0].strip(), "номер": p[1].strip(), "текст вопроса": p[2].strip(), "ответ": p[3].strip(), "варианты": p[4].strip(), "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."})
+        questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор"}]
     show_menu()
+
 ft.app(target=main)
+
