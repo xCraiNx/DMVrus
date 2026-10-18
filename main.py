@@ -217,12 +217,9 @@ def show_menu():
     r1 = ft.Row([ft.Container(create_menu_card("🟥 Ошибки", len(get_all_wrong()), lambda e: start_test("REVIEW"), True), expand=True), ft.Container(create_menu_card("🟦 Конспект", len(get_all_notebook()), lambda e: start_test("NOTEBOOK"), True), expand=True)], spacing=8)
     r2 = ft.Row([ft.Container(create_menu_card("🟪 20 вопросов", 20, lambda e: start_test("RANDOM_20"), True), expand=True), ft.Container(create_menu_card("🟨 Избранные", len(load_json(fav_path, [])), lambda e: start_test("FAVORITES"), True), expand=True)], spacing=8)
     menu_items_column.controls.extend([r1, r2, ft.Container(height=5)])
-    
     for s in sorted(sections.keys(), key=lambda x: int(x.split(".")[0]) if "." in x and x.split(".")[0].isdigit() else 999):
         ql = sections[s]
-        if ql: 
-            clean_sec_id = s.split(".")[0].strip() if "." in s else "1"
-            menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", s), len(ql), lambda e, sec=s: start_test(sec), sec_id=clean_sec_id))
+        if ql: menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", s), len(ql), lambda e, sec=s: start_test(sec), sec_id=s.split(".")[0].strip() if "." in s else "1"))
     search_input.on_change = filter_search; main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column]); page.update()
 
 def start_test(sec_name):
@@ -310,7 +307,15 @@ def main(page: ft.Page):
         for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
             if not line.strip() or line.startswith("Раздел;"): continue
             p = line.split(";")
-            if len(p) >= 5: local_data.append({"раздел": p[0].strip(), "номер": p[1].strip(), "текст вопроса": p[2].strip(), "ответ": p[3].strip(), "варианты": p[4].strip(), "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."})
-        questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор"}]
+            if len(p) >= 5:
+    local_data.append({
+    "раздел": p[0].strip(),
+    "номер": p[1].strip(),
+    "текст вопроса": p[2].strip(),
+    "ответ": p[3].strip(),
+    "варианты": p[4].strip(),
+    "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."
+})
+            questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор"}]
     show_menu()
 ft.app(target=main)
