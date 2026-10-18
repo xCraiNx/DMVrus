@@ -59,48 +59,31 @@ def toggle_fav_or_nb(path_target, is_nb=False):
 async def async_load_question():
     await asyncio.sleep(0.5)
     if state["answered_current"] and state["active_page"]:
-        if (state["index"] + 1) >= len(state["current_df"]): finish_test(); return
-        state["index"] += 1; load_question()
+        if (state["index"] + 1) >= len(state["current_df"]): 
+            finish_test()
+            return
+        state["index"] += 1
+        state["answered_current"] = False # Безопасный разблок кликов перед рендером
+        load_question()
 
-question_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER, soft_wrap=True)
-result_text = ft.Text(size=14, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER, soft_wrap=True)
-timer_text = ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
-progress_bar, square_style = ft.ProgressBar(value=0.0, height=8, color=ft.Colors.ORANGE_700), ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
-back_to_menu_btn, confirm_btn = ft.FilledButton("📁 В меню", style=square_style), ft.FilledButton("✅ Подтвердить ответ", visible=False, style=square_style)
-fav_btn, notebook_btn, del_nb_btn = ft.IconButton(icon=ft.Icons.STAR_OUTLINED, icon_size=26), ft.IconButton(icon=ft.Icons.BOOKMARK_OUTLINED, icon_size=26), ft.IconButton(icon=ft.Icons.DELETE_OUTLINED, icon_size=26, icon_color=ft.Colors.RED_400)
-options_column, search_input, menu_items_column, main_layout = ft.Column(spacing=10, horizontal_alignment=ft.CrossAxisAlignment.STRETCH), ft.TextField(label="Поиск...", prefix_icon=ft.Icons.SEARCH, border_radius=8, expand=True), ft.Column(spacing=8, horizontal_alignment=ft.CrossAxisAlignment.STRETCH), ft.Column(horizontal_alignment=ft.CrossAxisAlignment.STRETCH, spacing=10)
-
-def show_stats_dialog():
-    page = state["active_page"]; h = load_json(st_path, [])
-    if not h: page.open(ft.AlertDialog(title=ft.Text("📊 Статистика"), content=ft.Text("Нет завершенных тестов."))); return
-    c = ft.Column([ft.Text(f"📌 {r['date']} - {r['section']}\n   Результат: {r['score']}/{r['total']} ({(r['score']/r['total']*100) if r['total'] else 0:.1f}%)", size=13) for r in reversed(h[-10:])], spacing=10, scroll=ft.ScrollMode.AUTO, max_height=300)
-    page.open(ft.AlertDialog(title=ft.Text("📊 Последние 10 тестов"), content=c))
-
-def show_settings_dialog():
-    page, s_map = state["active_page"], {}
-    def close_and_refresh(e): page.close(dlg); show_menu()
-    def on_ch(k, v):
-        settings[k] = v
-        if k == "exam_mode" and v: settings["show_hints"] = False; s_map["show_hints"].value = False
-        elif k == "show_hints" and v: settings["exam_mode"] = False; s_map["exam_mode"].value = False
-        save_json(se_path, settings); page.theme_mode = ft.ThemeMode.DARK if settings["dark_theme"] else ft.ThemeMode.LIGHT; page.update()
-    s_map["dark_theme"] = ft.Switch(label="Темная тема", value=settings["dark_theme"], on_change=lambda e: on_ch("dark_theme", e.control.value))
-    s_map["exam_mode"] = ft.Switch(label="Режим экзамена", value=settings["exam_mode"], on_change=lambda e: on_ch("exam_mode", e.control.value))
-    s_map["show_hints"] = ft.Switch(label="Показывать подсказки", value=settings["show_hints"], on_change=lambda e: on_ch("show_hints", e.control.value))
-    s_map["auto_next"] = ft.Switch(label="Автопереход (0.5 сек)", value=settings["auto_next"], on_change=lambda e: on_ch("auto_next", e.control.value))
-    dd = ft.Dropdown(label="Палитра", value=settings["theme_style"], options=[ft.dropdown.Option(k, v) for k, v in [("classic", "Оранжевая"), ("premium", "Синяя"), ("eco", "Зеленая")]], on_change=lambda e: [settings.update({"theme_style": e.control.value}), save_json(se_path, settings), close_and_refresh(None)])
-    dlg = ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], s_map["auto_next"], ft.Divider(), dd], scroll=ft.ScrollMode.AUTO, max_height=380))
-    page.open(dlg)
-
-def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
-    bc = get_cur_color() if is_sys else get_sec_color(sec_id); ct = title.upper() 
-    return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(ct, size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, expand=True), ft.Container(content=ft.Text(str(count), size=11, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.Colors.WHITE, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(12))))
-
-def filter_search(e):
-    v = str(e.control.value).strip().lower()
-    if not v: show_menu(); return
-    state["search_results"] = [q for q in questions_data if v in str(q.get("текст вопроса", "")).lower()]
-    menu_items_column.controls.clear(); menu_items_column.controls.append(create_menu_card("🔍 Найдено совпадений", len(state["search_results"]), lambda e: start_test("SEARCH_RESULT"), True)); state["active_page"].update()
+def show_menu():
+    if not state["active_page"]: return
+    page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
+    state.update({"is_favorite_mode": False, "is_review_mode": False, "is_notebook_mode": False, "current_section_name": "", "current_df": []})
+    tc = get_cur_color()
+    header = ft.Row([ft.Text("Тренажёр ОТ и ЭБ", size=20, weight=ft.FontWeight.BOLD, expand=True), ft.Row([ft.IconButton(ft.Icons.BAR_CHART, icon_color=tc, on_click=lambda e: show_stats_dialog()), ft.IconButton(ft.Icons.SETTINGS, icon_color=tc, on_click=lambda e: show_settings_dialog())], spacing=0)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+    sections = {}
+    for q in questions_data:
+        full_sec_name = str(q.get("раздел", "1")).strip()
+        sections[full_sec_name] = sections.get(full_sec_name, []) + [q]
+    menu_items_column.controls.clear()
+    r1 = ft.Row([ft.Container(create_menu_card("🟥 Ошибки", len(get_all_wrong()), lambda e: start_test("REVIEW"), True), expand=True), ft.Container(create_menu_card("🟦 Конспект", len(get_all_notebook()), lambda e: start_test("NOTEBOOK"), True), expand=True)], spacing=8)
+    r2 = ft.Row([ft.Container(create_menu_card("🟪 20 вопросов", 20, lambda e: start_test("RANDOM_20"), True), expand=True), ft.Container(create_menu_card("🟨 Избранные", len(load_json(fav_path, [])), lambda e: start_test("FAVORITES"), True), expand=True)], spacing=8)
+    menu_items_column.controls.extend([r1, r2, ft.Container(height=5)])
+    for s in sorted(sections.keys(), key=lambda x: int(x.split(".")[0]) if "." in x and x.split(".")[0].isdigit() else 999):
+        ql = sections[s]
+        if ql: menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", s), len(ql), lambda e, sec=s: start_test(sec), sec_id=s.split(".")[0].strip() if "." in s else "1"))
+    search_input.on_change = filter_search; main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column]); page.update()
 
 def show_menu():
     if not state["active_page"]: return
