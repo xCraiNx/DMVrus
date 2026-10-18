@@ -144,7 +144,7 @@ def load_question():
     q = state["current_df"][state["index"]]; state.update({"answered_current": False, "selected_options_indices": []})
     result_text.value, confirm_btn.visible = "", False; progress_bar.value = state["index"] / len(state["current_df"])
     
-    # ИСПРАВЛЕНИЕ: Безопасное приведение к строке, лямбда get_sec_color сама подставит дефолтный цвет, если ключа нет
+    # ИСПРАВЛЕНИЕ: Безопасное извлечение индекса [0] перед очисткой строки
     raw_sec = q.get("раздел", "1")
     sec_color_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
     progress_bar.color = get_sec_color(sec_color_id)
