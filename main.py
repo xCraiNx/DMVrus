@@ -3,7 +3,7 @@ try: from database import QUESTIONS_TEXT
 except ImportError: QUESTIONS_TEXT = "1;1;Тест;1;Ответ;Разбор отсутствует."
 
 questions_data, state = [], {
-    "active_page": None, "current_df": [], "index": 0, "score": 0, "start_time": 0,
+    "active_page": None, "current_df": [], "index": 0, "score": 0, "start_time": 0.0,
     "is_favorite_mode": False, "is_review_mode": False, "is_notebook_mode": False,
     "current_section_name": "", "selected_options_indices": [], "answered_current": False,
     "shuffled_options": [], "search_results": [], "is_multiple_choice": False
@@ -14,7 +14,6 @@ fav_path, nb_path, wr_path, st_path, se_path = [os.path.join(data_dir, f) for f 
 
 SECTION_COLORS = {"1": ft.Colors.ORANGE_800, "2": ft.Colors.BLUE_800, "3": ft.Colors.GREEN_800, "4": ft.Colors.TEAL_800, "5": ft.Colors.RED_800, "6": ft.Colors.DEEP_ORANGE_800, "7": ft.Colors.INDIGO_800, "8": ft.Colors.PURPLE_800, "9": ft.Colors.CYAN_800}
 THEME_PALETTES = {"classic": {"primary": ft.Colors.ORANGE_700, "bg_btn": ft.Colors.ORANGE_500}, "premium": {"primary": ft.Colors.INDIGO_700, "bg_btn": ft.Colors.INDIGO_500}, "eco": {"primary": ft.Colors.GREEN_700, "bg_btn": ft.Colors.GREEN_500}, "monochrome": {"primary": ft.Colors.BLUE_GREY_700, "bg_btn": ft.Colors.BLUE_GREY_500}}
-
 def load_json(p, d):
     if os.path.exists(p):
         try:
@@ -53,7 +52,6 @@ def toggle_fav_or_nb(path_target, is_nb=False):
         state["current_df"].pop(state["index"])
         if not state["current_df"]: show_menu(); return
         if state["index"] >= len(state["current_df"]): state["index"] = len(state["current_df"]) - 1
-        load_question(); return
     load_question()
 
 async def async_load_question():
@@ -63,7 +61,6 @@ async def async_load_question():
         state["index"] += 1
         state["answered_current"] = False
         load_question()
-
 question_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
 result_text = ft.Text(size=14, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER)
 timer_text = ft.Text("⏱️ Время: 00:00", size=14, weight=ft.FontWeight.W_500)
@@ -93,7 +90,6 @@ def show_settings_dialog():
     dd = ft.Dropdown(label="Палитра", value=settings["theme_style"], options=[ft.dropdown.Option(k, v) for k, v in [("classic", "Оранжевая"), ("premium", "Синяя"), ("eco", "Зеленая")]], on_change=lambda e: [settings.update({"theme_style": e.control.value}), save_json(se_path, settings), close_and_refresh(None)])
     dlg = ft.AlertDialog(title=ft.Text("⚙️ Настройки"), content=ft.Column([s_map["dark_theme"], s_map["exam_mode"], s_map["show_hints"], s_map["auto_next"], ft.Divider(), dd], scroll=ft.ScrollMode.AUTO, max_height=380))
     page.open(dlg)
-
 def create_menu_card(title, count, on_click, is_sys=False, sec_id="1"):
     bc = get_cur_color() if is_sys else get_sec_color(sec_id); ct = title.upper() 
     return ft.Container(content=ft.ElevatedButton(content=ft.Row([ft.Text(ct, size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, expand=True), ft.Container(content=ft.Text(str(count), size=11, weight=ft.FontWeight.BOLD, color=bc), bgcolor=ft.Colors.WHITE, padding=ft.padding.symmetric(horizontal=8, vertical=2), border_radius=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), on_click=on_click, style=ft.ButtonStyle(bgcolor=bc, shape=ft.RoundedRectangleBorder(radius=8), padding=ft.padding.all(12))))
@@ -103,6 +99,7 @@ def filter_search(e):
     if not v: show_menu(); return
     state["search_results"] = [q for q in questions_data if v in str(q.get("текст вопроса", "")).lower()]
     menu_items_column.controls.clear(); menu_items_column.controls.append(create_menu_card("🔍 Найдено совпадений", len(state["search_results"]), lambda e: start_test("SEARCH_RESULT"), True)); state["active_page"].update()
+
 def show_menu():
     if not state["active_page"]: return
     page = state["active_page"]; main_layout.controls.clear(); page.scroll = ft.ScrollMode.AUTO
@@ -125,6 +122,7 @@ def show_menu():
     search_input.on_change = filter_search
     main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column])
     page.update()
+
 def start_test(sec_name):
     state.update({"index": 0, "score": 0, "start_time": time.time(), "is_favorite_mode": sec_name == "FAVORITES", "is_review_mode": sec_name == "REVIEW", "is_notebook_mode": sec_name == "NOTEBOOK", "current_section_name": sec_name})
     if sec_name == "REVIEW": state["current_df"] = get_all_wrong()
@@ -141,7 +139,7 @@ def load_question():
     if state["index"] >= len(state["current_df"]): finish_test(); return
     q = state["current_df"][state["index"]]; state.update({"answered_current": False, "selected_options_indices": []})
     result_text.value, confirm_btn.visible = "", False; progress_bar.value = state["index"] / len(state["current_df"])
-    raw_sec = q.get("раздел", "1"); sec_color_id = raw_sec.split(".").strip() if "." in raw_sec else "1"
+    raw_sec = q.get("раздел", "1"); sec_color_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
     progress_bar.color = get_sec_color(sec_color_id); question_text.value = f"{q.get('текст вопроса', '')}"
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
     fav_btn.icon, fav_btn.icon_color = (ft.Icons.STAR, ft.Colors.AMBER_500) if is_f else (ft.Icons.STAR_OUTLINED, ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
@@ -157,7 +155,6 @@ def load_question():
     for i, opt in enumerate(state["shuffled_options"]):
         options_column.controls.append(ft.Container(content=ft.Text(opt["text"], size=14, color=ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK), padding=ft.padding.all(12), border=ft.border.all(1, ft.Colors.GREY_700 if settings["dark_theme"] else ft.Colors.GREY_400), border_radius=10, bgcolor=ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100, on_click=lambda e, idx=i: select_option(idx)))
     state["active_page"].update()
-
 def select_option(idx):
     if state["answered_current"]: return
     if state["is_multiple_choice"]:
@@ -167,6 +164,7 @@ def select_option(idx):
         for i, c in enumerate(options_column.controls): c.bgcolor = (ft.Colors.ORANGE_900 if settings["dark_theme"] else ft.Colors.ORANGE_100) if i in state["selected_options_indices"] else (ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100)
         state["active_page"].update()
     else: state["selected_options_indices"] = [idx]; check_answer()
+
 def check_answer():
     state["answered_current"] = True; confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
     if state["is_multiple_choice"]:
