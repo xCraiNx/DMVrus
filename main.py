@@ -17,14 +17,18 @@ THEME_PALETTES = {"classic": {"primary": ft.Colors.ORANGE_700, "bg_btn": ft.Colo
 def load_json(p, d):
     if os.path.exists(p):
         try:
-            with open(p, "r", encoding="utf-8") as f: return json.load(f)
-        except: pass
+            with open(p, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Ошибка при загрузке {p}: {e}")  # Вывод ошибки  
     return d
 
 def save_json(p, data):
     try:
-        with open(p, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
-    except: pass
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"Ошибка при сохранении {p}: {e}")  # Вывод ошибки
 
 settings = load_json(se_path, {"dark_theme": True, "exam_mode": False, "show_hints": True, "shuffle_options": True, "shuffle_questions": True, "sounds": True, "adaptive_colors": True, "theme_style": "classic", "auto_next": True})
 get_cur_color = lambda: THEME_PALETTES.get(settings.get("theme_style", "classic"), THEME_PALETTES["classic"])["primary"]
@@ -199,19 +203,36 @@ def finish_test():
     main_layout.controls.append(ft.Column([ft.Text("🎉 Тестирование завершено!", size=20, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(f"Результат: {state['score']} из {total} ({(state['score']/total*100) if total else 0:.1f}%)", size=16, text_align=ft.TextAlign.CENTER), ft.Text(f"⏱️ Время: {m:02d}:{s:02d}", size=14, text_align=ft.TextAlign.CENTER), ft.Container(height=10), ft.FilledButton("📁 В главное меню", on_click=lambda e: show_menu(), style=square_style)], cross_axis_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)); page.update()
 
 def main(page: ft.Page):
-    global questions_data; state["active_page"] = page; page.theme_mode = ft.ThemeMode.DARK if settings["dark_theme"] else ft.ThemeMode.LIGHT
-    page.controls.clear(); page.add(ft.SafeArea(content=main_layout)); back_to_menu_btn.on_click = lambda e: show_menu()
-    fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click = lambda e: toggle_fav_or_nb(fav_path), lambda e: toggle_fav_or_nb(nb_path), lambda e: toggle_fav_or_nb(nb_path)
+    global questions_data  
+    state["active_page"] = page  
+    page.theme_mode = ft.ThemeMode.DARK if settings["dark_theme"] else ft.ThemeMode.LIGHT  
+    page.controls.clear()
+    page.add(ft.SafeArea(content=main_layout))
+    
+    # Добавьте отладочный вывод  
+    print("Запуск приложения...")
+
+    # Ваши кнопки и функции...
+    
     if not questions_data:
         local_data = []
         for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
-            if not line.strip() or line.startswith("Раздел;"): continue
+            if not line.strip() or line.startswith("Раздел;"):
+                continue  
             p = line.split(";")
             if len(p) >= 5:
                 local_data.append({
-                    "раздел": p[0].strip(), "номер": p[1].strip(), "текст вопроса": p[2].strip(),
-                    "ответ": p[3].strip(), "варианты": p[4].strip(),
+                    "раздел": p[0].strip(),
+                    "номер": p[1].strip(),
+                    "текст вопроса": p[2].strip(),
+                    "ответ": p[3].strip(),
+                    "варианты": p[4].strip(),
                     "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."
                 })
+        
+        # Вывод отладочной информации о загруженных вопросах  
+        print(f"Загружено вопросов: {len(local_data)}")
+        
         questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор"}]
+
     show_menu()
