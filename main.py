@@ -59,11 +59,9 @@ def toggle_fav_or_nb(path_target, is_nb=False):
 async def async_load_question():
     await asyncio.sleep(0.5)
     if state["answered_current"] and state["active_page"]:
-        if (state["index"] + 1) >= len(state["current_df"]): 
-            finish_test()
-            return
+        if (state["index"] + 1) >= len(state["current_df"]): finish_test(); return
         state["index"] += 1
-        state["answered_current"] = False # Безопасный разблок кликов перед рендером
+        state["answered_current"] = False  # Безопасный разблок интерфейса
         load_question()
 
 def show_menu():
@@ -82,7 +80,9 @@ def show_menu():
     menu_items_column.controls.extend([r1, r2, ft.Container(height=5)])
     for s in sorted(sections.keys(), key=lambda x: int(x.split(".")[0]) if "." in x and x.split(".")[0].isdigit() else 999):
         ql = sections[s]
-        if ql: menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", s), len(ql), lambda e, sec=s: start_test(sec), sec_id=s.split(".")[0].strip() if "." in s else "1"))
+        if ql: 
+            clean_sec_id = s.split(".")[0].strip() if "." in s else "1"
+            menu_items_column.controls.append(create_menu_card(ql[0].get("раздел", s), len(ql), lambda e, sec=s: start_test(sec), sec_id=clean_sec_id))
     search_input.on_change = filter_search; main_layout.controls.extend([header, ft.Row([search_input]), ft.Divider(height=5, color=ft.Colors.TRANSPARENT), menu_items_column]); page.update()
 
 def show_menu():
@@ -120,7 +120,8 @@ def load_question():
     if state["index"] >= len(state["current_df"]): finish_test(); return
     q = state["current_df"][state["index"]]; state.update({"answered_current": False, "selected_options_indices": []})
     result_text.value, confirm_btn.visible = "", False; progress_bar.value = state["index"] / len(state["current_df"])
-    raw_sec = q.get("раздел", "1"); sec_color_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
+    raw_sec = q.get("раздел", "1")
+    sec_color_id = raw_sec.split(".")[0].strip() if "." in raw_sec else "1"
     progress_bar.color = get_sec_color(sec_color_id); question_text.value = f"{q.get('текст вопроса', '')}"
     is_f = any(x.get("текст вопроса") == q.get("текст вопроса") for x in load_json(fav_path, []))
     fav_btn.icon, fav_btn.icon_color = (ft.Icons.STAR, ft.Colors.AMBER_500) if is_f else (ft.Icons.STAR_OUTLINED, ft.Colors.WHITE if settings["dark_theme"] else ft.Colors.BLACK)
