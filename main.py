@@ -174,19 +174,22 @@ def select_option(idx):
         for i, c in enumerate(options_column.controls): c.bgcolor = (ft.Colors.ORANGE_900 if settings["dark_theme"] else ft.Colors.ORANGE_100) if i in state["selected_options_indices"] else (ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100)
         state["active_page"].update()
     else: 
-        state["answered_current"] = True  # Мгновенно блокируем повторные тапы
+        state["selected_options_indices"] = [idx]
+        state["answered_current"] = True  # Блокируем клики мгновенно перед анимацией
         check_answer()
 
-
 def check_answer():
-    confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
+    state["answered_current"] = True; confirm_btn.visible = False; q = state["current_df"][state["index"]]; is_all = True
     if state["is_multiple_choice"]:
-        for i, o in enumerate(state["shuffled_options"]):
-            if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
-    else:
         if not state["selected_options_indices"]: is_all = False
         else:
-            sel_idx = state["selected_options_indices"]
+            for i, o in enumerate(state["shuffled_options"]):
+                if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
+    else:
+        # ИСПРАВЛЕНИЕ ТИПОВ: Извлекаем первый элемент списка безопасно
+        if not state["selected_options_indices"]: is_all = False
+        else:
+            sel_idx = state["selected_options_indices"][0]
             is_all = state["shuffled_options"][sel_idx]["is_correct"]
             
     trigger_vibration(success=is_all)
@@ -202,7 +205,6 @@ def check_answer():
     else:
         btn_text = "➡️ Следующий вопрос" if (state["index"] + 1) < len(state["current_df"]) else "🏁 Завершить тест"
         confirm_btn.text, confirm_btn.visible = btn_text, True; confirm_btn.on_click = lambda e: next_question(); state["active_page"].update()
-
 
 def next_question(): state["index"] += 1; load_question()
 def setup_test_screen():
