@@ -178,7 +178,6 @@ def check_answer():
             for i, o in enumerate(state["shuffled_options"]):
                 if o["is_correct"] != (i in state["selected_options_indices"]): is_all = False
     else:
-        # ИСПРАВЛЕНИЕ ТИПОВ: Извлекаем именно число (int), а не передаем весь список в индекс
         if not state["selected_options_indices"]: is_all = False
         else:
             sel_idx = state["selected_options_indices"][0]
@@ -230,5 +229,7 @@ def main(page: ft.Page):
                     "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."
                 })
         print(f"Загружено вопросов: {len(local_data)}")
-        questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор"}]
+        questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианны": "Ответ|Вариант 2", "подсказка": "Разбор"}]
     show_menu()
+    
+
