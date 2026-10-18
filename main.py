@@ -52,8 +52,7 @@ def toggle_fav_or_nb(path_target, is_nb=False):
     if state["current_section_name"] in ["FAVORITES", "NOTEBOOK"]:
         state["current_df"].pop(state["index"])
         if not state["current_df"]: show_menu(); return
-        if state["index"] >= len(state["current_df"]): state["index"] = len(state["current_df"]) - 1
-        load_question(); return
+        if state["index"] >= len(state["current_df"]): state["index"] = max(0, len(state["current_df"]) - 1)
     load_question()
 
 async def async_load_question():
@@ -61,7 +60,7 @@ async def async_load_question():
     if state["answered_current"] and state["active_page"]:
         if (state["index"] + 1) >= len(state["current_df"]): finish_test(); return
         state["index"] += 1
-        state["answered_current"] = False  # Безопасный разблок интерфейса перед рендером
+        state["answered_current"] = False  # Разблокируем клики для следующего вопроса
         load_question()
 
 question_text = ft.Text(size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER, soft_wrap=True)
