@@ -174,7 +174,6 @@ def select_option(idx):
         for i, c in enumerate(options_column.controls): c.bgcolor = (ft.Colors.ORANGE_900 if settings["dark_theme"] else ft.Colors.ORANGE_100) if i in state["selected_options_indices"] else (ft.Colors.GREY_900 if settings["dark_theme"] else ft.Colors.GREY_100)
         state["active_page"].update()
     else: 
-        state["selected_options_indices"] = [idx]
         state["answered_current"] = True  # Мгновенно блокируем повторные тапы
         check_answer()
 
@@ -187,7 +186,7 @@ def check_answer():
     else:
         if not state["selected_options_indices"]: is_all = False
         else:
-            sel_idx = state["selected_options_indices"][0]
+            sel_idx = state["selected_options_indices"]
             is_all = state["shuffled_options"][sel_idx]["is_correct"]
             
     trigger_vibration(success=is_all)
