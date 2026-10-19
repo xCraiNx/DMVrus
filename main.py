@@ -227,6 +227,7 @@ def main(page: ft.Page):
     page.add(ft.SafeArea(content=main_layout))
     print("Запуск приложения...")
     fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click = lambda e: toggle_fav_or_nb(fav_path), lambda e: toggle_fav_or_nb(nb_path), lambda e: toggle_fav_or_nb(nb_path)
+    back_to_menu_btn.on_click = lambda e: show_menu()
     
     if not questions_data:
         local_data = []
