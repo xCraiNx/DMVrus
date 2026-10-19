@@ -125,18 +125,31 @@ def main(page: ft.Page):
 
     # В Android Flet предоставляет каталог данных приложения через эту переменную.
     # Для запуска на компьютере используется отдельный каталог в домашней папке.
+    # Проверяем переменные окружения Flet для Android
     data_directory = os.environ.get("FLET_APP_STORAGE_DATA_DIR")
     if not data_directory:
         environment = getattr(page, "environment", None)
         if isinstance(environment, dict):
             data_directory = environment.get("FLET_APP_STORAGE_DATA_DIR")
 
-    storage = (
-        Path(data_directory)
-        if data_directory
-        else Path.home() / ".flet_trainer_app"
-    )
+    if data_directory:
+        # Если Flet передал правильный путь для Android
+        storage = Path(data_directory)
+    else:
+        # Резервный механизм определения ОС
+        import platform
+        if platform.system() == "Linux" and Path("/data/data").exists():
+            # Если мы на Android (среда Linux с каталогом приложений), но Flet не передал путь,
+            # используем стандартную временную директорию кэша приложения, где точно есть права
+            import tempfile
+            storage = Path(tempfile.gettempdir()) / "flet_trainer_app"
+        else:
+            # Для Windows, macOS и обычного Linux на ПК
+            storage = Path.home() / ".flet_trainer_app"
+
+    # Создаем папку, теперь с правильными правами доступа
     storage.mkdir(parents=True, exist_ok=True)
+
 
     paths = {
         "favorites": storage / "fv.json",
