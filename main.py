@@ -42,7 +42,7 @@ SECTION_COLORS = {
 
 
 def parse_questions(text):
-    """Формат строки: раздел;номер;метка;текст;ответ;варианты."""
+    """Формат строки: раздел;номер;текст;ответ;варианты."""
     questions = []
     seen_numbers = set()
 
@@ -52,14 +52,15 @@ def parse_questions(text):
         if not line or line.startswith("Раздел;"):
             continue
 
-        fields = line.split(";", 5)
-        if len(fields) != 6:
+        # Разделяем строку на 5 частей (так как у нас 4 символа ';')
+        fields = line.split(";", 4)
+        if len(fields) != 5:
             raise ValueError(
-                f"database.py, строка {line_number}: ожидалось 6 полей, "
+                f"database.py, строка {line_number}: ожидалось 5 полей, "
                 f"получено {len(fields)}"
             )
 
-        section, number, _label, question_text, answer, variants = (
+        section, number, question_text, answer, variants = (
             field.strip() for field in fields
         )
 
@@ -108,13 +109,6 @@ def parse_questions(text):
 
     return questions
 
-
-def load_json(path, default):
-    try:
-        with open(path, "r", encoding="utf-8") as file:
-            return json.load(file)
-    except (OSError, ValueError, TypeError):
-        return default
 
 
 def save_json(path, data):
