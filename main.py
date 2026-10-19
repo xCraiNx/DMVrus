@@ -194,7 +194,7 @@ def check_answer():
     else:
         if not state["selected_options_indices"]: is_all = False
         else:
-            sel_idx = state["selected_options_indices"][0]
+            sel_idx = state["selected_options_indices"]
             is_all = state["shuffled_options"][sel_idx]["is_correct"]
             
     trigger_vibration(success=is_all)
@@ -265,7 +265,7 @@ def main(page: ft.Page):
             p = line.split(";")
             if len(p) >= 5:
                 local_data.append({
-                    "раздел": p[0].strip(), "номер": p[1].strip(), "text вопроса": p[2].strip(),
+                    "раздел": p[0].strip(), "номер": p[1].strip(), "текст вопроса": p[2].strip(),
                     "ответ": p[3].strip(), "варианты": p[4].strip(),
                     "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."
                 })
