@@ -201,7 +201,7 @@ def check_answer():
     for i, c in enumerate(options_column.controls):
         o = state["shuffled_options"][i]; is_s = i in state["selected_options_indices"]
         if o["is_correct"] and is_s: c.bgcolor = ft.Colors.GREEN_900 if settings.get("dark_theme", True) else ft.Colors.GREEN_100
-        elif o["is_correct"] and not is_s: c.bgcolor = ft.Colors.BLUE_900 if settings["dark_theme", True) else ft.Colors.BLUE_100
+        elif o["is_correct"] and not is_s: c.bgcolor = ft.Colors.BLUE_900 if settings.get("dark_theme", True) else ft.Colors.BLUE_100
         elif not o["is_correct"] and is_s: c.bgcolor = ft.Colors.RED_900 if settings.get("dark_theme", True) else ft.Colors.RED_100
     if is_all: state["score"] += 1; remove_wrong_q(q.get("текст вопроса", "")); result_text.value = "🎉 Правильно!"; result_text.color = ft.Colors.GREEN_400 if settings.get("dark_theme", True) else ft.Colors.GREEN_600
     else: add_wrong_q(q); result_text.value = f"💡 Подсказка:\n• {q.get('подсказка', 'Разбор отсутствует.')}"; result_text.color = ft.Colors.RED_400 if settings.get("dark_theme", True) else ft.Colors.RED_600
@@ -265,7 +265,7 @@ def main(page: ft.Page):
             p = line.split(";")
             if len(p) >= 5:
                 local_data.append({
-                    "раздел": p[0].strip(), "номер": p[1].strip(), "текст вопроса": p[2].strip(),
+                    "раздел": p[0].strip(), "номер": p[1].strip(), "text вопроса": p[2].strip(),
                     "ответ": p[3].strip(), "варианты": p[4].strip(),
                     "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."
                 })
