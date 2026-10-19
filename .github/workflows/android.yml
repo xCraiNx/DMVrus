@@ -24,7 +24,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'  # ИСПРАВЛЕНО НА СТАБИЛЬНЫЙ 3.12
+          python-version: '3.12'
 
       - name: Install Flet
         run: |
@@ -41,10 +41,7 @@ jobs:
           CI: "true"
         run: |
           flutter config --no-analytics
-          run: flet build apk --python-version 3.12 --arch arm64-v8a --yes --verbose
-          
-      - name: Upgrade Flet CLI
-        run: pip install --upgrade flet
+          flet build apk --python-version 3.12 --arch arm64-v8a --yes --verbose
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
