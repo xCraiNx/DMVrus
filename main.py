@@ -110,7 +110,13 @@ def parse_questions(text):
     return questions
 
 
-
+def load_json(path, default):
+    try:
+        with open(path, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except (OSError, ValueError, TypeError):
+        return default
+        
 def save_json(path, data):
     """Запись через временный файл, чтобы снизить риск повреждения JSON."""
     temporary_path = path.with_name(path.name + ".tmp")
