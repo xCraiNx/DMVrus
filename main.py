@@ -1,4 +1,20 @@
 import flet as ft, os, json, random, time, asyncio
+
+# Оставляем глобальные переменные пустыми, настроим их внутри main
+questions_data = []
+state = {
+    "active_page": None, "current_df": [], "index": 0, "score": 0, "start_time": 0.0,
+    "is_favorite_mode": False, "is_review_mode": False, "is_notebook_mode": False,
+    "current_section_name": "", "selected_options_indices": [], "answered_current": False,
+    "shuffled_options": [], "search_results": [], "is_multiple_choice": False
+}
+
+# Пути к файлам сделаем глобальными переменными, но присвоим значения позже
+fav_path = nb_path = wr_path = st_path = se_path = ""
+settings = {}
+
+
+import flet as ft, os, json, random, time, asyncio
 try: 
     from database import QUESTIONS_TEXT
 except ImportError: 
@@ -220,18 +236,57 @@ def finish_test():
     main_layout.controls.append(ft.Column([ft.Text("🎉 Тестирование завершено!", size=20, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER), ft.Text(f"Результат: {state['score']} из {total} ({(state['score']/total*100) if total else 0:.1f}%)", size=16, text_align=ft.TextAlign.CENTER), ft.Text(f"⏱️ Время: {m:02d}:{s:02d}", size=14, text_align=ft.TextAlign.CENTER), ft.Container(height=10), ft.FilledButton("📁 В главное меню", on_click=lambda e: show_menu(), style=square_style)], cross_axis_alignment=ft.CrossAxisAlignment.CENTER, spacing=15)); page.update()
 
 def main(page: ft.Page):
-    global questions_data  
+    global questions_data, fav_path, nb_path, wr_path, st_path, se_path, settings
     state["active_page"] = page  
-    page.theme_mode = ft.ThemeMode.DARK if settings["dark_theme"] else ft.ThemeMode.LIGHT  
+    
+    # ИСПРАВЛЕНИЕ: Используем page.client_storage или безопасную директорию документов устройства
+    # Для Serious Python на Android это самый надежный способ получить путь на запись
+    data_dir = page.environment.get("FLET_APP_STORAGE_DATA_DIR", "")
+    if not data_dir:
+        import tempfile
+        data_dir = tempfile.gettempdir()
+        
+    os.makedirs(data_dir, exist_ok=True)
+    
+    # Динамически настраиваем пути, теперь у Android будут права на их перезапись
+    fav_path = os.path.join(data_dir, "fv.json")
+    nb_path = os.path.join(data_dir, "nb.json")
+    wr_path = os.path.join(data_dir, "wr.json")
+    st_path = os.path.join(data_dir, "st.json")
+    se_path = os.path.join(data_dir, "se.json")
+    
+    # Загружаем настройки только ПОСЛЕ определения путей
+    settings = load_json(se_path, {"dark_theme": True, "exam_mode": False, "show_hints": True, "shuffle_options": True, "shuffle_questions": True, "sounds": True, "adaptive_colors": True, "theme_style": "classic", "auto_next": True})
+    
+    page.theme_mode = ft.ThemeMode.DARK if settings.get("dark_theme", True) else ft.ThemeMode.LIGHT  
     page.controls.clear()
     page.add(ft.SafeArea(content=main_layout))
-    print("Запуск приложения...")
+    
     fav_btn.on_click, notebook_btn.on_click, del_nb_btn.on_click = lambda e: toggle_fav_or_nb(fav_path), lambda e: toggle_fav_or_nb(nb_path), lambda e: toggle_fav_or_nb(nb_path)
     back_to_menu_btn.on_click = lambda e: show_menu()
     
+    # Безопасное чтение QUESTIONS_TEXT из database.py
     if not questions_data:
+        try:
+            # Пытаемся прочитать как обычный файл, если импорт из zip заблокирован
+            if os.path.exists("database.py"):
+                with open("database.py", "r", encoding="utf-8") as db_file:
+                    content = db_file.read()
+                    # Ищем строку с текстом вопросов, если файл открылся как текст
+                    if "QUESTIONS_TEXT =" in content:
+                        local_text = content.split("QUESTIONS_TEXT =")[-1].strip().strip('"').strip("'")
+                    else:
+                        from database import QUESTIONS_TEXT
+                        local_text = QUESTIONS_TEXT
+            else:
+                from database import QUESTIONS_TEXT
+                local_text = QUESTIONS_TEXT
+        except Exception as ex:
+            print(f"Ошибка чтения БД: {ex}")
+            local_text = "1;1;Тест;1;Ответ;Разбор отсутствует."
+            
         local_data = []
-        for line in QUESTIONS_TEXT.strip().replace("\r", "").split("\n"):
+        for line in local_text.strip().replace("\r", "").split("\n"):
             if not line.strip() or line.startswith("Раздел;"): continue  
             p = line.split(";")
             if len(p) >= 5:
@@ -240,9 +295,10 @@ def main(page: ft.Page):
                     "ответ": p[3].strip(), "варианты": p[4].strip(),
                     "подсказка": p[5].strip() if len(p) > 5 else "Разбор отсутствует."
                 })
-        print(f"Загружено вопросов: {len(local_data)}")
         questions_data = local_data if local_data else [{"раздел": "1. Тест", "номер": "1", "текст вопроса": "Тест", "ответ": "1", "варианты": "Ответ|Вариант 2", "подсказка": "Разбор"}]
+        
     show_menu()
+
 
 if __name__ == "__main__":
     ft.run(main)
